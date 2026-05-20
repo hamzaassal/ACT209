@@ -1,0 +1,17 @@
+variable_1,variable_2,correlation
+duration,duration,1
+net_sales,duration,0.40762859100805454
+commision_in_value,duration,0.3281790513274958
+age,duration,0.00792936681200395
+duration,net_sales,0.40762859100805454
+net_sales,net_sales,1
+commision_in_value,net_sales,0.6431003771221719
+age,net_sales,0.036790017608038746
+duration,commision_in_value,0.3281790513274958
+net_sales,commision_in_value,0.6431003771221719
+commision_in_value,commision_in_value,1
+age,commision_in_value,0.1148599501701668
+duration,age,0.00792936681200395
+net_sales,age,0.036790017608038746
+commision_in_value,age,0.1148599501701668
+age,age,1

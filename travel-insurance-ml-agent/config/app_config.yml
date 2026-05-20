@@ -1,0 +1,14 @@
+app:
+  title: "Travel Insurance Risk Scoring"
+  subtitle: "Prototype Shiny d'aide à la décision underwriting"
+  baseline_claim_rate: 0.0168
+  champion_model: "XGBoost sans SMOTE"
+  default_threshold: 0.05
+  fallback_threshold: 0.08
+  score_threshold_source: "Seuils approximés à partir des percentiles observés sur le test set XGBoost sans SMOTE."
+
+llm:
+  provider: "openai_compatible"
+  model: "gpt-4o-mini"
+  endpoint: "https://api.openai.com/v1/chat/completions"
+  api_key_env: "OPENAI_API_KEY"

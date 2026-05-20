@@ -1,0 +1,39 @@
+very_high:
+  label: "Très élevé"
+  condition: "Top 1 %"
+  min_score: 0.13039529
+  claim_rate: 0.1622
+  lift: 9.64
+  recommendation: "Analyse underwriting prioritaire et revue détaillée du dossier."
+
+high:
+  label: "Élevé"
+  condition: "Top 5 %"
+  min_score: 0.07563382
+  claim_rate: 0.1103
+  lift: 6.56
+  recommendation: "Analyse complémentaire recommandée avant décision."
+
+moderate_high:
+  label: "Modéré à élevé"
+  condition: "Top 10 %"
+  min_score: 0.04541832
+  claim_rate: 0.0904
+  lift: 5.37
+  recommendation: "Revue du dossier conseillée selon les règles internes."
+
+moderate:
+  label: "Modéré"
+  condition: "Top 20 %"
+  min_score: 0.01731843
+  claim_rate: 0.0592
+  lift: 3.52
+  recommendation: "Surveillance ou contrôle léger possible."
+
+standard:
+  label: "Standard"
+  condition: "Hors top 20 %"
+  min_score: 0
+  claim_rate: 0.0168
+  lift: 1.00
+  recommendation: "Aucune alerte particulière selon le score."

@@ -1,0 +1,11 @@
+.Rhistory
+.RData
+.Rproj.user
+renv/library/
+data/raw/*
+data/*.csv
+data/processed/*
+models/*.rds
+shiny_app/*.log
+.env
+.DS_Store

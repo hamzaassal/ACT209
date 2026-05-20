@@ -1,0 +1,81 @@
+variable,category,claim_status,n,share
+agency,C2B,no,7241,0.9304805962477513
+agency,C2B,yes,541,0.06951940375224878
+agency,CWT,no,7996,0.9893590695372433
+agency,CWT,yes,86,0.010640930462756744
+agency,EPX,no,28761,0.9932656444260257
+agency,EPX,yes,195,0.006734355573974306
+agency,JWT,no,436,0.990909090909091
+agency,JWT,yes,4,0.00909090909090909
+agency,JZI,no,6012,0.9948700976336257
+agency,JZI,yes,31,0.005129902366374318
+agency,KML,no,327,0.9761194029850746
+agency,KML,yes,8,0.023880597014925373
+agency,LWC,no,648,0.9473684210526315
+agency,LWC,yes,36,0.05263157894736842
+agency,RAB,no,645,0.9984520123839009
+agency,RAB,yes,1,0.0015479876160990713
+agency,SSI,no,943,0.9926315789473684
+agency,SSI,yes,7,0.007368421052631579
+agency,TST,no,498,0.996
+agency,TST,yes,2,0.004
+agency,other,no,856,0.9884526558891455
+agency,other,yes,10,0.011547344110854504
+agency_type,Airlines,no,15601,0.9638576547633757
+agency_type,Airlines,yes,585,0.03614234523662424
+agency_type,Travel Agency,no,38762,0.991406210036319
+agency_type,Travel Agency,yes,336,0.008593789963681008
+destination,AUSTRALIA,no,3419,0.9890078102400925
+destination,AUSTRALIA,yes,38,0.010992189759907435
+destination,CHINA,no,3926,0.9884189325276939
+destination,CHINA,yes,46,0.011581067472306143
+destination,HONG KONG,no,2093,0.9928842504743833
+destination,HONG KONG,yes,15,0.007115749525616698
+destination,INDONESIA,no,2861,0.9947844228094576
+destination,INDONESIA,yes,15,0.00521557719054242
+destination,JAPAN,no,1944,0.992849846782431
+destination,JAPAN,yes,14,0.007150153217568948
+destination,MALAYSIA,no,4378,0.9947739150193138
+destination,MALAYSIA,yes,23,0.005226084980686207
+destination,PHILIPPINES,no,2004,0.9960238568588469
+destination,PHILIPPINES,yes,8,0.003976143141153081
+destination,SINGAPORE,no,10983,0.9518155819395094
+destination,SINGAPORE,yes,556,0.04818441806049051
+destination,THAILAND,no,5096,0.9933723196881091
+destination,THAILAND,yes,34,0.006627680311890838
+destination,UNITED STATES,no,2449,0.9851166532582462
+destination,UNITED STATES,yes,37,0.014883346741753822
+destination,other,no,15210,0.9912023460410557
+destination,other,yes,135,0.008797653958944282
+distribution_channel,Offline,no,1035,0.9838403041825095
+distribution_channel,Offline,yes,17,0.016159695817490494
+distribution_channel,Online,no,53328,0.9833308747602891
+distribution_channel,Online,yes,904,0.016669125239710873
+gender,F,no,8056,0.9589334603023449
+gender,F,yes,345,0.041066539697655044
+gender,M,no,8270,0.966347277401262
+gender,M,yes,288,0.03365272259873802
+gender,missing,no,38037,0.9924853228962818
+gender,missing,yes,288,0.0075146771037182
+product_name,1 way Comprehensive Plan,no,2503,0.9964171974522293
+product_name,1 way Comprehensive Plan,yes,9,0.0035828025477707007
+product_name,2 way Comprehensive Plan,no,10994,0.9872485632183908
+product_name,2 way Comprehensive Plan,yes,142,0.012751436781609195
+product_name,Annual Silver Plan,no,1125,0.8809710258418167
+product_name,Annual Silver Plan,yes,152,0.11902897415818324
+product_name,Basic Plan,no,5164,0.9955658376711009
+product_name,Basic Plan,yes,23,0.004434162328899171
+product_name,Bronze Plan,no,3579,0.9448257655755016
+product_name,Bronze Plan,yes,209,0.05517423442449842
+product_name,Cancellation Plan,no,15264,0.997125685915861
+product_name,Cancellation Plan,yes,44,0.0028743140841390124
+product_name,Rental Vehicle Excess Insurance,no,7996,0.9893590695372433
+product_name,Rental Vehicle Excess Insurance,yes,86,0.010640930462756744
+product_name,Silver Plan,no,2039,0.9353211009174311
+product_name,Silver Plan,yes,141,0.06467889908256881
+product_name,Ticket Protector,no,943,0.9926315789473684
+product_name,Ticket Protector,yes,7,0.007368421052631579
+product_name,Value Plan,no,2257,0.9916520210896309
+product_name,Value Plan,yes,19,0.008347978910369069
+product_name,other,no,2499,0.9656105100463679
+product_name,other,yes,89,0.03438948995363215

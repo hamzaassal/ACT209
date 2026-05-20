@@ -1,0 +1,51 @@
+body {
+  background-color: #f6f8fb;
+}
+
+.card {
+  border-radius: 8px;
+  border: 1px solid #d8e0ea;
+  box-shadow: 0 1px 4px rgba(30, 50, 80, 0.06);
+}
+
+.warning-box,
+.alert-box,
+.info-box,
+.recommendation-box {
+  border-radius: 6px;
+  padding: 12px 14px;
+  margin: 12px 0;
+}
+
+.warning-box {
+  background: #fff7e6;
+  border-left: 4px solid #d97706;
+}
+
+.alert-box {
+  background: #fde8e8;
+  border-left: 4px solid #c53030;
+}
+
+.info-box {
+  background: #e8f2ff;
+  border-left: 4px solid #1f4e79;
+}
+
+.recommendation-box {
+  background: #edf7ed;
+  border-left: 4px solid #2f855a;
+}
+
+.question-btn {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #f9fbfd;
+  border: 1px solid #d8e0ea;
+  border-radius: 6px;
+}

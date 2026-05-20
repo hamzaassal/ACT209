@@ -1,0 +1,7 @@
+config_id,model,strategy,.metric,.estimator,.estimate
+xgboost__none,xgboost,none,accuracy,binary,0.9503481957131229
+xgboost__none,xgboost,none,precision,binary,0.11464968152866242
+xgboost__none,xgboost,none,recall,binary,0.2903225806451613
+xgboost__none,xgboost,none,f_meas,binary,0.1643835616438356
+xgboost__none,xgboost,none,roc_auc,binary,0.8302608894335625
+xgboost__none,xgboost,none,pr_auc,binary,0.10150588515700701

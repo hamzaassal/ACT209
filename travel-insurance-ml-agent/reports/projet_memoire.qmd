@@ -1,0 +1,34 @@
+---
+title: "Prediction d'achat d'assurance voyage"
+subtitle: "Projet Master 2 Actuariat"
+format: html
+editor: visual
+---
+
+## Introduction
+
+Ce rapport presente une demarche de modelisation de l'achat d'assurance voyage a partir du dataset Kaggle Travel Insurance.
+
+## Donnees
+
+Les donnees brutes sont placees manuellement dans `data/raw/`, puis preparees dans `data/processed/`.
+
+## Analyse exploratoire
+
+Cette section decrira la distribution des variables explicatives et de la variable cible.
+
+## Modelisation
+
+Cette section comparera un modele baseline et un modele plus avance de type random forest ou xgboost.
+
+## Evaluation
+
+Les performances seront analysees avec l'accuracy, le recall, la precision, le F1-score, l'AUC et la matrice de confusion.
+
+## Agent IA
+
+L'agent IA traduira les predictions en explications et recommandations metier pour un charge d'affaires assurance.
+
+## Conclusion
+
+Cette section synthetisera les resultats, les limites et les pistes d'amelioration.

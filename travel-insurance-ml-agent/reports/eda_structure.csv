@@ -1,0 +1,12 @@
+variable,class,missing_count,distinct_count
+agency,character,0,16
+agency_type,character,0,2
+distribution_channel,character,0,2
+product_name,character,0,26
+claim_status,character,0,2
+duration,numeric,0,455
+destination,character,0,149
+net_sales,numeric,0,1139
+commision_in_value,numeric,0,1035
+gender,character,38325,3
+age,numeric,0,89

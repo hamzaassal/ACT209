@@ -1,0 +1,502 @@
+---
+title: "Prédiction de sinistres en assurance voyage par Machine Learning"
+author: "Hamza Assal"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+library(dplyr)
+library(readr)
+library(knitr)
+library(here)
+
+read_csv_if_exists <- function(path) {
+  if (file.exists(path)) read_csv(path, show_col_types = FALSE) else NULL
+}
+
+include_img <- function(path, caption) {
+  if (file.exists(path)) {
+    knitr::include_graphics(path)
+  } else {
+    cat(paste0("*Graphique non disponible : ", caption, "*"))
+  }
+}
+
+fmt_pct <- function(x, digits = 1) paste0(round(100 * x, digits), " %")
+
+dimensions <- read_csv_if_exists(here("reports", "eda_dimensions.csv"))
+structure_summary <- read_csv_if_exists(here("reports", "eda_structure.csv"))
+target_distribution <- read_csv_if_exists(here("reports", "target_distribution.csv"))
+model_comparison <- read_csv_if_exists(here("reports", "model_comparison.csv"))
+model_thresholds <- read_csv_if_exists(here("reports", "model_thresholds.csv"))
+model_ranking <- read_csv_if_exists(here("reports", "model_ranking.csv"))
+final_metrics <- read_csv_if_exists(here("reports", "final_metrics.csv"))
+bootstrap_summary <- read_csv_if_exists(here("reports", "bootstrap_summary.csv"))
+threshold_analysis <- read_csv_if_exists(here("reports", "threshold_analysis.csv"))
+selected_thresholds <- read_csv_if_exists(here("reports", "selected_thresholds.csv"))
+class_balance_summary <- read_csv_if_exists(here("reports", "class_balance_summary.csv"))
+training_data_audit <- read_csv_if_exists(here("reports", "training_data_audit.csv"))
+classification_metrics_by_model <- read_csv_if_exists(here("reports", "classification_metrics_by_model.csv"))
+smote_effect_on_metrics <- read_csv_if_exists(here("reports", "smote_effect_on_metrics.csv"))
+risk_ranking_lift_table <- read_csv_if_exists(here("reports", "risk_ranking_lift_table.csv"))
+confusion_matrix <- read_csv_if_exists(here("reports", "confusion_matrix.csv"))
+metadata <- if (file.exists(here("models", "model_metadata.rds"))) readRDS(here("models", "model_metadata.rds")) else NULL
+```
+
+# 1. Introduction
+
+Ce mémoire étudie l'application du Machine Learning à l'assurance voyage, avec un objectif opérationnel : estimer la probabilité de survenance d'un sinistre. Le projet s'inscrit dans une démarche actuarielle appliquée, où le modèle n'est pas uniquement un outil prédictif, mais aussi un support d'analyse du risque et d'aide à la décision.
+
+La cible du projet est `claim_status`, construite à partir de la variable de statut de sinistre disponible dans la base. La classe positive est `yes`, qui correspond à la présence d'un sinistre, et la classe négative est `no`.
+
+# 2. Présentation du problème métier
+
+En assurance voyage, les sinistres sont généralement rares mais financièrement et opérationnellement importants. Pouvoir attribuer une probabilité de sinistre à un contrat permet d'alimenter des analyses de segmentation, de surveillance du portefeuille, de tarification exploratoire et de priorisation des contrôles.
+
+Le modèle ne remplace pas le jugement actuariel. Il fournit un score de risque qui doit être interprété avec les limites de la base, la politique de souscription, les garanties couvertes et les contraintes réglementaires.
+
+# 3. Présentation de la base de données
+
+```{r data-overview}
+if (!is.null(dimensions)) {
+  kable(dimensions, caption = "Dimensions de la base nettoyée")
+}
+
+if (!is.null(structure_summary)) {
+  kable(structure_summary, caption = "Structure et complétude des variables")
+}
+```
+
+La base contient des informations relatives à l'agence, au canal de distribution, au produit, à la durée, à la destination, au montant des ventes nettes, à la commission, au genre et à l'âge. Les noms de colonnes sont standardisés avec `janitor::clean_names()`.
+
+# 4. Nettoyage des données
+
+Le script d'import lit le CSV disponible dans `data/raw/`, standardise les colonnes, détecte la cible, supprime les doublons exacts et sauvegarde `data/processed/data_clean.rds`. Le fichier local contient une colonne `Claim`, renommée en `claim_status` afin de conserver une nomenclature stable dans tout le pipeline.
+
+```{r missing-values}
+missing_summary <- read_csv_if_exists(here("data", "processed", "missing_summary.csv"))
+if (!is.null(missing_summary)) {
+  kable(missing_summary, caption = "Valeurs manquantes par variable")
+}
+```
+
+# 5. Analyse exploratoire
+
+```{r target-plot}
+include_img(here("reports", "figures", "target_distribution.png"), "Distribution de la cible")
+```
+
+```{r target-table}
+if (!is.null(target_distribution)) {
+  kable(target_distribution, digits = 4, caption = "Distribution de claim_status")
+}
+```
+
+```{r numeric-plot}
+include_img(here("reports", "figures", "numeric_by_target.png"), "Variables numériques selon la cible")
+```
+
+```{r categorical-plot}
+include_img(here("reports", "figures", "categorical_by_target.png"), "Variables catégorielles selon la cible")
+```
+
+```{r corr-plot}
+include_img(here("reports", "figures", "correlation_matrix.png"), "Matrice de corrélation")
+```
+
+# 6. Déséquilibre de classes
+
+```{r imbalance-text, results='asis'}
+if (!is.null(target_distribution)) {
+  yes_share <- target_distribution %>% filter(claim_status == "yes") %>% pull(share)
+  no_share <- target_distribution %>% filter(claim_status == "no") %>% pull(share)
+  cat(
+    "La proportion de sinistres observés est de **", fmt_pct(yes_share, 2),
+    "** contre **", fmt_pct(no_share, 2),
+    "** de contrats sans sinistre. Cette rareté rend l'accuracy insuffisante : un modèle qui prédit toujours `no` obtient une accuracy élevée, mais ne détecte aucun sinistre."
+  )
+}
+```
+
+Dans ce contexte, le recall sur la classe `yes` devient une métrique métier importante : il mesure la part des sinistres effectivement détectés. La précision reste également utile, car elle indique la proportion de prédictions positives réellement sinistrées. La ROC AUC est retenue pour classer les modèles sur leur capacité globale de discrimination.
+
+# 7. Préprocessing
+
+La séparation train/test est réalisée avant tout apprentissage du preprocessing, avec une stratification sur `claim_status`. Le test set reste non modifié pendant tout le projet.
+
+La recette `tidymodels` applique l'imputation, le regroupement des modalités rares, la gestion des nouvelles modalités, l'encodage one-hot, la suppression des variables à variance nulle et la normalisation des variables numériques. Cette organisation évite les fuites de données, car les paramètres de preprocessing sont appris uniquement sur les données d'entraînement ou sur les folds de validation.
+
+# 8. Méthodologie de modélisation
+
+Le benchmark compare deux stratégies :
+
+- `none` : apprentissage sans rééquilibrage ;
+- `smote` : application de SMOTE uniquement à l'intérieur des folds de validation croisée et sur le train lors du fit final.
+
+Les modèles effectivement entraînés sont : régression logistique, arbre de décision, random forest et XGBoost. CatBoost est conservé dans la structure du pipeline, mais le package `catboost` n'est pas disponible via CRAN pour l'environnement R utilisé ; les lignes correspondantes sont donc tracées comme `skipped` dans le tableau comparatif.
+
+La validation croisée est stratifiée en 5 folds. Les métriques calculées sont : accuracy, precision, recall, F1-score, ROC AUC et PR AUC. Les métriques sensibles à la classe événement sont calculées explicitement sur la classe positive `yes`.
+
+# 9. Gestion du déséquilibre par SMOTE
+
+SMOTE est utilisé comme stratégie de comparaison pour augmenter artificiellement la représentation de la classe rare dans les données d'entraînement. Il n'est jamais appliqué au test set.
+
+L'upsampling et le downsampling ne sont pas retenus dans le pipeline principal afin de garder une comparaison plus resserrée : `none` donne le point de référence, tandis que `smote` teste une approche synthétique adaptée aux classes rares. Le downsampling aurait supprimé de l'information dans une base déjà peu riche en sinistres, et l'upsampling simple aurait dupliqué des observations sans créer de diversité locale.
+
+## Effet de SMOTE sur le déséquilibre de classes
+
+Dans le pipeline, SMOTE est appelé explicitement dans `scripts/04_model_training.R` avec `themis::step_smote(claim_status, over_ratio = 0.30, skip = TRUE)`. Il est ajouté à une recette dédiée, `recipe_smote`, après la séparation train/test réalisée dans `scripts/03_preprocessing.R`.
+
+Ainsi, SMOTE intervient uniquement sur les données d'entraînement : soit lors du fit final sur le train set, soit à l'intérieur des folds de validation croisée gérés par `tidymodels`. Le test set n'est jamais rééquilibré et conserve sa distribution réelle. Cette organisation évite une fuite de données, car aucune observation synthétique construite à partir de l'information d'entraînement ne vient contaminer l'évaluation finale.
+
+SMOTE ne duplique pas simplement les lignes minoritaires existantes. Il crée des observations synthétiques de la classe `yes` par interpolation locale entre observations minoritaires proches, ce qui enrichit l'espace d'apprentissage tout en limitant la simple répétition d'exemples.
+
+```{r class-balance-table}
+if (!is.null(class_balance_summary)) {
+  kable(class_balance_summary, digits = 4, caption = "Effet de SMOTE sur la distribution des classes")
+}
+```
+
+```{r class-balance-plot}
+include_img(here("reports", "figures", "class_balance_smote_effect.png"), "Effet de SMOTE sur la balance des classes")
+```
+
+## Vérification de l’utilisation effective de SMOTE
+
+Un audit complémentaire vérifie que les modèles associés à la stratégie `smote` utilisent bien une base d'entraînement rééquilibrée. Pour la stratégie `none`, les modèles sont entraînés sur le train original non rééquilibré. Pour la stratégie `smote`, la recette contient explicitement `themis::step_smote(claim_status, over_ratio = 0.30, skip = TRUE)`, puis elle est préparée sur l'échantillon d'entraînement.
+
+Le résultat observé confirme que les configurations `smote` utilisent 56 539 observations d'entraînement, dont 13 047 sinistres synthétiques ou originaux, contre 44 227 observations et 735 sinistres pour la stratégie `none`. Le test set reste identique pour toutes les configurations, avec 11 057 observations et 186 sinistres.
+
+```{r training-data-audit}
+if (!is.null(training_data_audit)) {
+  kable(training_data_audit, digits = 4, caption = "Audit des données d'entraînement réellement utilisées")
+}
+```
+
+Les métriques suivantes recalculent les performances de chaque configuration sur le même test set inchangé. Elles permettent de lire l'effet de SMOTE non seulement sur les proportions d'entraînement, mais aussi sur les erreurs opérationnelles : faux positifs, faux négatifs et vrais positifs.
+
+```{r classification-metrics-by-model}
+if (!is.null(classification_metrics_by_model)) {
+  kable(classification_metrics_by_model, digits = 4, caption = "Métriques test par modèle et stratégie")
+}
+```
+
+```{r smote-effect-on-metrics}
+if (!is.null(smote_effect_on_metrics)) {
+  kable(smote_effect_on_metrics, digits = 4, caption = "Effet de SMOTE sur les métriques par modèle")
+}
+```
+
+# 10. Comparaison des modèles
+
+```{r model-ranking}
+if (!is.null(model_ranking)) {
+  kable(model_ranking, digits = 4, caption = "Classement des configurations selon ROC AUC, F1 puis recall")
+}
+```
+
+```{r model-comparison}
+if (!is.null(model_comparison)) {
+  model_comparison_display <- model_comparison %>%
+    select(model, strategy, status, .metric, mean, n, std_err, reason)
+  kable(model_comparison_display, digits = 4, caption = "Comparaison complète des modèles")
+}
+```
+
+Le choix du modèle champion suit l'ordre défini : ROC AUC, puis F1-score, puis recall sur `yes`. Cette règle privilégie d'abord la capacité de discrimination des probabilités, puis la qualité de classification de la classe sinistre.
+
+Un audit de la logique ML a conduit à calibrer un seuil de décision par configuration à partir des prédictions out-of-fold. Cette étape est importante : comparer les F1-scores au seuil arbitraire de 0,5 aurait pénalisé les modèles capables de discriminer les sinistres mais conservateurs dans leurs probabilités.
+
+```{r model-thresholds}
+if (!is.null(model_thresholds)) {
+  kable(model_thresholds, digits = 4, caption = "Seuils calibrés par configuration sur prédictions out-of-fold")
+}
+```
+
+# 11. Résultats du modèle champion
+
+```{r champion-text, results='asis'}
+if (!is.null(metadata)) {
+  champ <- metadata$champion
+  threshold <- metadata$decision_threshold$threshold
+  cat(
+    "Le modèle champion est **", champ$config_id,
+    "**. Le seuil de décision utilisé pour les métriques finales est **",
+    threshold,
+    "**, calibré sur les prédictions out-of-fold de validation croisée afin de maximiser le F1-score sans utiliser le test set."
+  )
+}
+```
+
+```{r final-metrics}
+if (!is.null(final_metrics)) {
+  kable(final_metrics, digits = 4, caption = "Métriques finales sur le test set non modifié")
+}
+```
+
+```{r confusion-table}
+if (!is.null(confusion_matrix)) {
+  kable(confusion_matrix, caption = "Matrice de confusion sur le test set")
+}
+```
+
+```{r confusion-plot}
+include_img(here("reports", "figures", "confusion_matrix.png"), "Matrice de confusion")
+```
+
+```{r roc-plot}
+include_img(here("reports", "figures", "roc_curve.png"), "Courbe ROC")
+```
+
+```{r pr-plot}
+include_img(here("reports", "figures", "precision_recall_curve.png"), "Courbe précision/rappel")
+```
+
+# 12. Analyse de seuils du modèle champion
+
+Une analyse complémentaire a été réalisée sur le test set pour comprendre l'effet du seuil de décision du modèle champion XGBoost. Les seuils testés vont de 0,01 à 0,30 par pas de 0,01.
+
+Cette analyse illustre un arbitrage central en assurance : diminuer le seuil augmente le nombre de sinistres détectés, donc le recall, mais augmente aussi les faux positifs. À l'inverse, augmenter le seuil améliore généralement la précision, mais laisse davantage de sinistres non détectés.
+
+```{r selected-thresholds}
+if (!is.null(selected_thresholds)) {
+  kable(selected_thresholds, digits = 4, caption = "Seuils sélectionnés : statistique et métier")
+}
+```
+
+Le seuil statistique maximise le F1-score. Il cherche un équilibre entre precision et recall. Le seuil métier impose une contrainte différente : atteindre au moins 50 % de recall lorsque cela est possible. Ce second seuil accepte davantage de faux positifs afin de capter une part plus importante des sinistres.
+
+```{r threshold-f1}
+include_img(here("reports", "figures", "threshold_f1_score.png"), "F1-score selon le seuil")
+```
+
+```{r threshold-pr}
+include_img(here("reports", "figures", "threshold_precision_recall.png"), "Precision et recall selon le seuil")
+```
+
+```{r threshold-errors}
+include_img(here("reports", "figures", "threshold_false_positives_false_negatives.png"), "Faux positifs et faux négatifs selon le seuil")
+```
+
+```{r threshold-positives}
+include_img(here("reports", "figures", "threshold_positive_predictions.png"), "Nombre de positifs prédits selon le seuil")
+```
+
+```{r threshold-table}
+if (!is.null(threshold_analysis)) {
+  kable(threshold_analysis, digits = 4, caption = "Analyse complète des seuils sur le test set")
+}
+```
+
+# 13. Validation bootstrap du modèle champion
+
+Le bootstrap est appliqué uniquement au modèle champion pour mesurer la stabilité statistique de ses performances. Il ne sert pas à corriger le déséquilibre de classes. À chaque réplication, un échantillon bootstrap du train est tiré, le modèle champion est réentraîné, puis évalué sur le test set initial non modifié.
+
+```{r bootstrap-summary}
+if (!is.null(bootstrap_summary)) {
+  kable(bootstrap_summary, digits = 4, caption = "Résumé bootstrap du modèle champion")
+}
+```
+
+```{r bootstrap-auc}
+include_img(here("reports", "figures", "bootstrap_auc_distribution.png"), "Distribution bootstrap de la ROC AUC")
+```
+
+```{r bootstrap-f1}
+include_img(here("reports", "figures", "bootstrap_f1_distribution.png"), "Distribution bootstrap du F1-score")
+```
+
+```{r bootstrap-recall}
+include_img(here("reports", "figures", "bootstrap_recall_distribution.png"), "Distribution bootstrap du recall")
+```
+
+# 14. Analyse du pouvoir de scoring et de priorisation du risque
+
+## Pourquoi compléter la classification binaire par une analyse de scoring ?
+
+Le problème étudié est fortement déséquilibré : les sinistres sont rares dans le test set, avec un taux moyen d'environ 1,68 %. Dans ce contexte, les métriques classiques de classification binaire, calculées à partir d'un seuil donné, donnent une vision nécessaire mais partielle de la performance du modèle.
+
+Un modèle peut être limité comme classifieur direct `sinistre` / `absence de sinistre`, tout en étant utile comme outil de scoring. C'est précisément le cas recherché en assurance : il est souvent plus pertinent de classer les assurés ou les dossiers par niveau de risque que de produire une décision automatique oui/non. L'objectif métier devient alors d'identifier les dossiers les plus risqués afin de prioriser les actions : revue renforcée, ciblage des contrôles, segmentation du portefeuille ou allocation des ressources d'analyse.
+
+Le modèle ne doit donc pas être interprété comme un outil de décision automatique, mais comme un outil de priorisation et de scoring du risque.
+
+## Principe de l'analyse par score
+
+Le modèle champion XGBoost sans SMOTE produit, pour chaque observation du test set, une probabilité estimée de sinistre. Les observations sont ensuite triées par probabilité décroissante : les dossiers les mieux classés sont ceux que le modèle considère comme les plus risqués.
+
+Les segments Top 1 %, Top 5 %, Top 10 %, Top 20 % et Top 30 % correspondent aux observations ayant les scores de risque les plus élevés. On mesure ensuite combien de sinistres réels sont contenus dans chacun de ces segments. Cette approche permet d'évaluer la capacité du modèle à concentrer le risque dans une fraction réduite du portefeuille.
+
+## Définition des métriques du tableau
+
+Les indicateurs utilisés dans le tableau de lift sont les suivants :
+
+- **Observations** : nombre de dossiers dans le segment considéré.
+- **Sinistres capturés** : nombre de vrais sinistres présents dans le segment.
+- **% des sinistres capturés** : part des sinistres totaux du test set retrouvés dans le segment.
+- **Taux de sinistre segment** : nombre de sinistres du segment divisé par le nombre d'observations du segment.
+- **Taux moyen test** : fréquence globale des sinistres dans le test set.
+- **Lift** : rapport entre le taux de sinistre du segment et le taux moyen de sinistre du test set.
+
+La formule utilisée est :
+
+\[
+\text{Lift} = \frac{\text{taux de sinistre du segment}}{\text{taux moyen de sinistre du test set}}
+\]
+
+Un lift supérieur à 1 signifie que le segment est plus sinistré que la moyenne du portefeuille test. Par exemple, un lift de 5 signifie que le segment contient environ cinq fois plus de sinistres que ce que l'on observerait en moyenne par sélection aléatoire.
+
+```{r risk-ranking-lift-table}
+if (is.null(risk_ranking_lift_table)) {
+  risk_ranking_lift_table <- tibble::tribble(
+    ~segment, ~n_observations, ~n_claims_captured, ~share_of_total_claims_captured, ~claim_rate_in_segment, ~baseline_claim_rate, ~lift,
+    "top_1_percent", 111, 18, 0.0968, 0.1622, 0.0168, 9.64,
+    "top_5_percent", 553, 61, 0.3280, 0.1103, 0.0168, 6.56,
+    "top_10_percent", 1106, 100, 0.5376, 0.0904, 0.0168, 5.37,
+    "top_20_percent", 2212, 131, 0.7043, 0.0592, 0.0168, 3.52,
+    "top_30_percent", 3318, 146, 0.7849, 0.0440, 0.0168, 2.62
+  )
+}
+
+risk_ranking_lift_display <- risk_ranking_lift_table %>%
+  mutate(
+    segment = recode(
+      segment,
+      top_1_percent = "Top 1 %",
+      top_5_percent = "Top 5 %",
+      top_10_percent = "Top 10 %",
+      top_20_percent = "Top 20 %",
+      top_30_percent = "Top 30 %"
+    ),
+    `Sinistres capturés (%)` = fmt_pct(share_of_total_claims_captured, 2),
+    `Taux de sinistre segment` = fmt_pct(claim_rate_in_segment, 2),
+    `Taux moyen test` = fmt_pct(baseline_claim_rate, 2),
+    lift = round(lift, 2)
+  ) %>%
+  select(
+    Segment = segment,
+    Observations = n_observations,
+    `Sinistres capturés` = n_claims_captured,
+    `Sinistres capturés (%)`,
+    `Taux de sinistre segment`,
+    `Taux moyen test`,
+    Lift = lift
+  )
+
+kable(risk_ranking_lift_display, caption = "Concentration des sinistres dans les plus hauts scores")
+```
+
+## Analyse détaillée des résultats
+
+**Top 1 % des scores.** Le segment contient 111 observations et 18 sinistres. Il capture 9,68 % des sinistres du test set, avec un taux de sinistre de 16,22 %. Le lift est de 9,64 : ce segment est donc presque dix fois plus sinistré que la moyenne. Il s'agit d'un segment extrêmement risqué, très utile si l'assureur souhaite concentrer ses efforts sur un nombre très réduit de dossiers.
+
+**Top 5 % des scores.** Le segment contient 553 observations et 61 sinistres. Il capture 32,80 % des sinistres, avec un taux de sinistre de 11,03 % et un lift de 6,56. C'est un excellent segment de ciblage : environ un tiers des sinistres est concentré dans seulement 5 % du portefeuille test.
+
+**Top 10 % des scores.** Le segment contient 1 106 observations et 100 sinistres. Il capture 53,76 % des sinistres, avec un taux de sinistre de 9,04 % et un lift de 5,37. C'est un résultat central du rapport : les 10 % de dossiers les plus risqués contiennent plus de la moitié des sinistres. Cette performance montre que le modèle présente une capacité intéressante de concentration du risque.
+
+**Top 20 % des scores.** Le segment contient 2 212 observations et 131 sinistres. Il capture 70,43 % des sinistres, avec un taux de sinistre de 5,92 % et un lift de 3,52. Ce segment offre un bon compromis métier si l'assureur dispose de la capacité d'analyser un volume plus large de dossiers.
+
+**Top 30 % des scores.** Le segment contient 3 318 observations et 146 sinistres. Il capture 78,49 % des sinistres, avec un taux de sinistre de 4,40 % et un lift de 2,62. Le gain marginal diminue par rapport aux segments plus concentrés, mais ce groupe reste nettement plus risqué que la moyenne du test set.
+
+## Comparaison avec le seuil de classification
+
+L'évaluation classique au seuil calibré de 0,08 indique que le modèle détecte environ 29 % des sinistres. Cette lecture est utile, mais elle dépend fortement d'une règle binaire : au-dessus du seuil, le dossier est classé positif ; en dessous, il est classé négatif.
+
+L'approche ranking/scoring donne une vision plus adaptée au contexte de sinistres rares. Dans le Top 10 % des scores, le modèle capture 53,76 % des sinistres. Dans le Top 20 %, il capture 70,43 % des sinistres. Cela montre que le modèle est plus pertinent pour hiérarchiser le risque que pour produire une décision binaire stricte.
+
+Cette différence d'interprétation est importante : le modèle présente une capacité intéressante de concentration du risque, même si ses métriques de classification binaire restent limitées.
+
+## Interprétation métier assurance
+
+Concrètement, un assureur pourrait utiliser ce score pour prioriser les dossiers à analyser. Le score peut alimenter plusieurs cas d'usage : ciblage des contrôles, surveillance renforcée des profils à risque, aide à la souscription, segmentation du portefeuille ou définition de règles de gestion différenciées.
+
+Si l'assureur ne peut analyser que 5 % des dossiers, le modèle permet de cibler un segment contenant 32,80 % des sinistres. Si l'assureur peut analyser 10 % des dossiers, il couvre 53,76 % des sinistres. S'il peut analyser 20 % des dossiers, il couvre 70,43 % des sinistres. Le score permet donc une allocation plus efficace des ressources d'analyse qu'une sélection aléatoire.
+
+Cette logique correspond à une approche actuarielle pragmatique : le modèle n'a pas besoin de prédire parfaitement chaque sinistre pour créer de la valeur. Il doit surtout aider à mieux ordonner les risques et à concentrer l'attention métier sur les zones du portefeuille où la sinistralité observée est la plus élevée.
+
+## Limites de l'approche
+
+Le score ne prouve pas qu'un sinistre aura lieu. La précision individuelle reste limitée et il existe beaucoup de faux positifs, ce qui est fréquent dans les problèmes de sinistres rares. L'analyse de lift doit donc être utilisée comme un outil d'aide à la décision, et non comme une règle automatique de souscription ou de gestion.
+
+Le choix entre Top 5 %, Top 10 % ou Top 20 % dépend des ressources disponibles et du coût métier associé aux analyses complémentaires. Une mise en production réelle nécessiterait une analyse coût/bénéfice : coût d'un faux positif, coût d'un sinistre non détecté, capacité opérationnelle de traitement et acceptabilité métier des règles de priorisation.
+
+## Lien avec l'agent IA explicatif
+
+Cette analyse de scoring est particulièrement utile pour la future couche agent IA. L'agent peut expliquer pourquoi un dossier se situe dans le Top 10 % des scores, traduire la probabilité en niveau de risque, identifier les facteurs qui contribuent au score et formuler une recommandation métier.
+
+L'agent ne doit pas produire une décision automatique. Il doit aider un gestionnaire, un chargé d'affaires ou un actuaire à comprendre le score et à décider si le dossier mérite une revue standard, une surveillance renforcée ou une investigation complémentaire.
+
+```{r risk-lift-curve}
+lift_curve_path <- here("reports", "figures", "lift_curve.png")
+if (!file.exists(lift_curve_path)) {
+  lift_curve_path <- here("reports", "figures", "risk_ranking_lift_curve.png")
+}
+include_img(lift_curve_path, "Courbe de lift")
+```
+
+```{r cumulative-gains}
+gains_path <- here("reports", "figures", "cumulative_gains_chart.png")
+if (!file.exists(gains_path)) {
+  gains_path <- here("reports", "figures", "risk_ranking_cumulative_gains.png")
+}
+include_img(gains_path, "Cumulative gains chart")
+```
+
+```{r score-distribution}
+score_dist_path <- here("reports", "figures", "score_distribution_by_claim_status.png")
+if (!file.exists(score_dist_path)) {
+  score_dist_path <- here("reports", "figures", "risk_score_distribution_by_class.png")
+}
+include_img(score_dist_path, "Distribution des scores par classe réelle claim_status")
+```
+
+En définitive, les résultats de lift montrent que le modèle XGBoost apporte une valeur métier réelle malgré des métriques de classification binaire limitées : il permet de concentrer plus de la moitié des sinistres dans les 10 % de dossiers les plus risqués et plus de 70 % des sinistres dans les 20 % de dossiers les plus risqués. Cette propriété en fait un outil de scoring et de priorisation pertinent pour un usage assurantiel.
+
+# 15. Interprétation actuarielle et métier
+
+Les résultats confirment la difficulté d'un problème de sinistres rares. La ROC AUC du modèle champion indique une capacité de discrimination exploitable, mais la précision et le F1-score restent modestes, ce qui est cohérent avec une faible prévalence de la classe `yes`.
+
+D'un point de vue métier, le score peut être utilisé comme indicateur de vigilance plutôt que comme décision automatique. Un contrat avec une probabilité élevée de sinistre pourrait justifier une analyse complémentaire, une surveillance renforcée ou une étude des facteurs de risque associés. Le recall est central si l'objectif est de limiter les sinistres non détectés, tandis que la précision devient prioritaire si l'on veut réduire les faux positifs dans une procédure opérationnelle coûteuse.
+
+# 16. Limites du modèle
+
+La principale limite est le déséquilibre extrême de la cible. Les métriques de classification dépendent fortement du seuil de décision. Un seuil unique ne reflète pas nécessairement les coûts asymétriques entre faux positifs et faux négatifs.
+
+CatBoost n'a pas pu être entraîné dans cet environnement R, car le package n'est pas disponible via CRAN pour la version utilisée. La structure du pipeline permet toutefois de l'ajouter ultérieurement si l'environnement technique est complété.
+
+# 17. Ouverture vers un agent IA explicatif
+
+La couche agent IA pourra transformer le score de sinistre en explication métier. L'objectif n'est pas seulement d'afficher une probabilité, mais d'expliquer les facteurs contribuant au risque, de traduire le score pour un chargé d'affaires ou un actuaire, et de proposer une recommandation claire : surveillance simple, revue renforcée ou investigation complémentaire.
+
+Cette brique doit rester prudente : elle explique une estimation probabiliste, pas une certitude de sinistre.
+
+# 18. Déploiement applicatif : Shiny et agent IA explicatif
+
+Le projet est complété par une application Shiny destinée à rendre le modèle exploitable par un utilisateur métier. Cette couche applicative est importante car les résultats du modèle ne doivent pas rester sous forme de fichiers techniques : ils doivent être traduits en score lisible, en segment de risque et en recommandation underwriting.
+
+L'application présente le modèle champion XGBoost sans SMOTE comme un outil de scoring et de priorisation. Elle ne cherche pas à automatiser une décision d'acceptation ou de refus. Le score de sinistre est affiché avec son seuil opérationnel, son segment de risque, le taux de sinistre historique du segment et le lift associé. Cette présentation est cohérente avec l'analyse de ranking : dans un portefeuille où les sinistres sont rares, la valeur principale du modèle réside dans sa capacité à concentrer les dossiers risqués dans les premiers segments de score.
+
+L'application est organisée autour de plusieurs vues : accueil du projet, saisie d'un dossier, restitution du score, analyse métier, agent IA et documentation. Le souscripteur peut ainsi saisir les caractéristiques d'un dossier, calculer la probabilité estimée de sinistre, visualiser le segment de risque et obtenir une explication métier.
+
+L'agent IA apporte une valeur ajoutée en transformant une sortie statistique en réponse structurée pour un underwriter. Il reçoit le contexte du dossier, la probabilité prédite, le seuil utilisé, le segment de risque, le lift, la recommandation déterministe et les limites du modèle. Sa réponse vise à expliquer le résultat, rappeler les précautions d'usage et proposer une recommandation d'analyse. L'agent ne modifie pas la prédiction et ne remplace pas l'underwriter.
+
+Le prototype prévoit également un mode fallback local. Si aucune clé API LLM n'est disponible, l'application continue à fonctionner grâce à des fonctions déterministes d'explication et de recommandation. Cette conception rend le prototype plus robuste et plus facile à présenter dans un cadre académique ou professionnel.
+
+## Architecture de l'agent IA
+
+Le flux applicatif peut être résumé ainsi :
+
+```text
+Saisie utilisateur -> modèle ML -> score -> segmentation -> contexte agent -> réponse LLM -> recommandation métier
+```
+
+La séparation des responsabilités est volontaire : le modèle ML calcule uniquement une probabilité, Shiny orchestre la saisie et l'affichage, et l'agent IA contextualise la sortie pour l'utilisateur métier. Cette architecture limite le risque de confusion entre prédiction statistique, interprétation métier et décision underwriting.
+
+Les limites restent importantes. Les segments de risque reposent sur des seuils estimés à partir de l'analyse du test set et devront être recalibrés en conditions réelles. L'interprétation locale des facteurs individuels reste limitée tant que des valeurs SHAP ne sont pas intégrées. Enfin, toute utilisation opérationnelle nécessiterait une validation métier, un suivi du drift, une analyse coût/bénéfice et une gouvernance claire des décisions.
+
+# 19. Conclusion
+
+Le projet met en place un pipeline reproductible pour prédire la survenance d'un sinistre en assurance voyage. Les scripts produisent une base nettoyée, une analyse exploratoire, un benchmark de modèles, une évaluation finale sur test set, une sauvegarde du modèle champion et une validation bootstrap.
+
+Les résultats montrent que la discrimination probabiliste est plus informative que l'accuracy brute dans ce contexte. Le modèle champion constitue une base exploitable pour un mémoire actuariel et pour une future application Shiny enrichie par un agent IA explicatif.
