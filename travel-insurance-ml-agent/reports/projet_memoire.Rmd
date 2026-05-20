@@ -44,6 +44,11 @@ risk_ranking_lift_table <- read_csv_if_exists(here("reports", "risk_ranking_lift
 model_comparison_smote_intensity <- read_csv_if_exists(here("reports", "model_comparison_smote_intensity.csv"))
 smote_intensity_class_balance <- read_csv_if_exists(here("reports", "smote_intensity_class_balance.csv"))
 xgboost_lift_by_smote_intensity <- read_csv_if_exists(here("reports", "xgboost_lift_by_smote_intensity.csv"))
+hyperparameter_tuning_results <- read_csv_if_exists(here("reports", "hyperparameter_tuning_results.csv"))
+best_tuned_models <- read_csv_if_exists(here("reports", "best_tuned_models.csv"))
+tuned_model_test_metrics <- read_csv_if_exists(here("reports", "tuned_model_test_metrics.csv"))
+tuned_model_lift_analysis <- read_csv_if_exists(here("reports", "tuned_model_lift_analysis.csv"))
+champion_vs_tuned_comparison <- read_csv_if_exists(here("reports", "champion_vs_tuned_comparison.csv"))
 confusion_matrix <- read_csv_if_exists(here("reports", "confusion_matrix.csv"))
 metadata <- if (file.exists(here("models", "model_metadata.rds"))) readRDS(here("models", "model_metadata.rds")) else NULL
 ```
@@ -249,7 +254,99 @@ Les résultats indiquent que le modèle XGBoost sans rééquilibrage conserve la
 
 Cette lecture confirme que, dans ce portefeuille, le rééquilibrage synthétique doit être utilisé avec prudence. Pour un usage assurantiel orienté priorisation, la conservation de la distribution naturelle peut rester préférable lorsque le modèle produit déjà un score bien ordonné. L'analyse SMOTE demeure utile comme test de robustesse, mais elle ne justifie pas ici de remplacer le modèle champion XGBoost sans SMOTE.
 
-# 10. Comparaison des modèles
+# 10. Optimisation des hyperparamètres
+
+Une étape complémentaire d'optimisation des hyperparamètres a été ajoutée afin de vérifier si le modèle champion pouvait être amélioré de manière raisonnable. L'objectif n'est pas de réaliser une recherche exhaustive, mais de produire une comparaison propre, reproductible et présentable dans un mémoire actuariel.
+
+Le tuning est limité aux familles de modèles les plus pertinentes pour ce projet : XGBoost sans SMOTE, XGBoost avec pondération de classe, XGBoost avec SMOTE léger, Random Forest et CatBoost si disponible. CatBoost reste documenté, mais n'est pas exécuté lorsque le package n'est pas disponible dans l'environnement R.
+
+La validation croisée reste stratifiée en 5 folds. Les métriques prioritaires sont la ROC AUC et la PR AUC, car le problème est fortement déséquilibré. Les métriques de classification au seuil, comme le F1-score, le recall et la précision, sont également calculées, mais elles ne suffisent pas à elles seules pour juger un modèle orienté scoring. Le lift dans le Top 10 % des scores reste une métrique métier importante, car l'application vise à prioriser les dossiers les plus risqués.
+
+Pour XGBoost, les hyperparamètres testés sont : `trees`, `tree_depth`, `learn_rate`, `loss_reduction`, `min_n`, `sample_size` et `mtry`. Une variante avec pondération de classe est aussi testée via `scale_pos_weight`, avec plusieurs valeurs dont la valeur empirique `no / yes` observée sur le train. Cette pondération est une alternative à SMOTE : elle conserve les observations originales mais modifie le poids relatif des erreurs sur la classe minoritaire.
+
+Pour Random Forest, la grille porte sur `mtry`, `trees` et `min_n`. Le tuning reste volontairement limité afin d'éviter une optimisation trop lourde et peu lisible dans le cadre du mémoire.
+
+```{r hyperparameter-tuning-results}
+if (!is.null(hyperparameter_tuning_results)) {
+  tuning_display <- hyperparameter_tuning_results %>%
+    select(
+      config_id, model, model_variant, status, cv_roc_auc, cv_pr_auc,
+      cv_threshold, cv_precision_at_threshold, cv_recall_at_threshold,
+      cv_f1_at_threshold, trees, tree_depth, learn_rate, min_n,
+      mtry, scale_pos_weight, smote_over_ratio, reason
+    )
+  kable(
+    tuning_display,
+    digits = 4,
+    caption = "Résultats de validation croisée du tuning"
+  )
+}
+```
+
+```{r best-tuned-models}
+if (!is.null(best_tuned_models)) {
+  best_tuned_display <- best_tuned_models %>%
+    select(
+      config_id, model, model_variant, cv_roc_auc, cv_pr_auc,
+      cv_threshold, cv_precision_at_threshold, cv_recall_at_threshold,
+      cv_f1_at_threshold, trees, tree_depth, learn_rate, min_n,
+      mtry, scale_pos_weight, smote_over_ratio
+    )
+  kable(
+    best_tuned_display,
+    digits = 4,
+    caption = "Meilleur modèle tuné par famille"
+  )
+}
+```
+
+```{r tuned-model-test-metrics}
+if (!is.null(tuned_model_test_metrics)) {
+  tuned_test_display <- tuned_model_test_metrics %>%
+    select(
+      config_id, model, model_variant, threshold, accuracy, precision,
+      recall, f1_score, roc_auc, pr_auc, predicted_positive,
+      false_positives, false_negatives, true_positives, true_negatives
+    )
+  kable(
+    tuned_test_display,
+    digits = 4,
+    caption = "Performances test des meilleurs modèles tunés"
+  )
+}
+```
+
+```{r tuned-model-lift-analysis}
+if (!is.null(tuned_model_lift_analysis)) {
+  tuned_lift_display <- tuned_model_lift_analysis %>%
+    select(
+      model, model_variant, segment, n_observations, n_claims_captured,
+      share_of_total_claims_captured, claim_rate_in_segment,
+      baseline_claim_rate, lift
+    )
+  kable(
+    tuned_lift_display,
+    digits = 4,
+    caption = "Analyse ranking/lift des meilleurs modèles tunés"
+  )
+}
+```
+
+```{r champion-vs-tuned}
+if (!is.null(champion_vs_tuned_comparison)) {
+  kable(
+    champion_vs_tuned_comparison,
+    digits = 4,
+    caption = "Comparaison du champion actuel et du meilleur modèle tuné"
+  )
+}
+```
+
+Les résultats montrent que le tuning ne justifie pas de remplacer le modèle champion actuel. Le meilleur candidat tuné est un XGBoost pondéré, mais il n'améliore pas le champion sur le test set : la ROC AUC et la PR AUC restent légèrement inférieures, et le lift Top 10 % est comparable mais non supérieur. Surtout, le seuil retenu par validation croisée pour ce modèle est très conservateur : il améliore la précision mais détecte très peu de sinistres, ce qui réduit fortement son intérêt opérationnel.
+
+Le modèle XGBoost sans SMOTE reste donc le meilleur compromis pour l'application Shiny : il conserve une bonne capacité de ranking, capture plus de la moitié des sinistres dans le Top 10 % des scores et reste cohérent avec l'objectif de scoring/priorisation du risque. Le tuning valide ainsi le choix initial plutôt qu'il ne le remet en cause.
+
+# 11. Comparaison des modèles
 
 ```{r model-ranking}
 if (!is.null(model_ranking)) {
@@ -275,7 +372,7 @@ if (!is.null(model_thresholds)) {
 }
 ```
 
-# 11. Résultats du modèle champion
+# 12. Résultats du modèle champion
 
 ```{r champion-text, results='asis'}
 if (!is.null(metadata)) {
@@ -314,7 +411,7 @@ include_img(here("reports", "figures", "roc_curve.png"), "Courbe ROC")
 include_img(here("reports", "figures", "precision_recall_curve.png"), "Courbe précision/rappel")
 ```
 
-# 12. Analyse de seuils du modèle champion
+# 13. Analyse de seuils du modèle champion
 
 Une analyse complémentaire a été réalisée sur le test set pour comprendre l'effet du seuil de décision du modèle champion XGBoost. Les seuils testés vont de 0,01 à 0,30 par pas de 0,01.
 
@@ -350,7 +447,7 @@ if (!is.null(threshold_analysis)) {
 }
 ```
 
-# 13. Validation bootstrap du modèle champion
+# 14. Validation bootstrap du modèle champion
 
 Le bootstrap est appliqué uniquement au modèle champion pour mesurer la stabilité statistique de ses performances. Il ne sert pas à corriger le déséquilibre de classes. À chaque réplication, un échantillon bootstrap du train est tiré, le modèle champion est réentraîné, puis évalué sur le test set initial non modifié.
 
@@ -372,7 +469,7 @@ include_img(here("reports", "figures", "bootstrap_f1_distribution.png"), "Distri
 include_img(here("reports", "figures", "bootstrap_recall_distribution.png"), "Distribution bootstrap du recall")
 ```
 
-# 14. Analyse du pouvoir de scoring et de priorisation du risque
+# 15. Analyse du pouvoir de scoring et de priorisation du risque
 
 ## Pourquoi compléter la classification binaire par une analyse de scoring ?
 
@@ -513,25 +610,25 @@ include_img(score_dist_path, "Distribution des scores par classe réelle claim_s
 
 En définitive, les résultats de lift montrent que le modèle XGBoost apporte une valeur métier réelle malgré des métriques de classification binaire limitées : il permet de concentrer plus de la moitié des sinistres dans les 10 % de dossiers les plus risqués et plus de 70 % des sinistres dans les 20 % de dossiers les plus risqués. Cette propriété en fait un outil de scoring et de priorisation pertinent pour un usage assurantiel.
 
-# 15. Interprétation actuarielle et métier
+# 16. Interprétation actuarielle et métier
 
 Les résultats confirment la difficulté d'un problème de sinistres rares. La ROC AUC du modèle champion indique une capacité de discrimination exploitable, mais la précision et le F1-score restent modestes, ce qui est cohérent avec une faible prévalence de la classe `yes`.
 
 D'un point de vue métier, le score peut être utilisé comme indicateur de vigilance plutôt que comme décision automatique. Un contrat avec une probabilité élevée de sinistre pourrait justifier une analyse complémentaire, une surveillance renforcée ou une étude des facteurs de risque associés. Le recall est central si l'objectif est de limiter les sinistres non détectés, tandis que la précision devient prioritaire si l'on veut réduire les faux positifs dans une procédure opérationnelle coûteuse.
 
-# 16. Limites du modèle
+# 17. Limites du modèle
 
 La principale limite est le déséquilibre extrême de la cible. Les métriques de classification dépendent fortement du seuil de décision. Un seuil unique ne reflète pas nécessairement les coûts asymétriques entre faux positifs et faux négatifs.
 
 CatBoost n'a pas pu être entraîné dans cet environnement R, car le package n'est pas disponible via CRAN pour la version utilisée. La structure du pipeline permet toutefois de l'ajouter ultérieurement si l'environnement technique est complété.
 
-# 17. Ouverture vers un agent IA explicatif
+# 18. Ouverture vers un agent IA explicatif
 
 La couche agent IA pourra transformer le score de sinistre en explication métier. L'objectif n'est pas seulement d'afficher une probabilité, mais d'expliquer les facteurs contribuant au risque, de traduire le score pour un chargé d'affaires ou un actuaire, et de proposer une recommandation claire : surveillance simple, revue renforcée ou investigation complémentaire.
 
 Cette brique doit rester prudente : elle explique une estimation probabiliste, pas une certitude de sinistre.
 
-# 18. Déploiement applicatif : Shiny et agent IA explicatif
+# 19. Déploiement applicatif : Shiny et agent IA explicatif
 
 Le projet est complété par une application Shiny destinée à rendre le modèle exploitable par un utilisateur métier. Cette couche applicative est importante car les résultats du modèle ne doivent pas rester sous forme de fichiers techniques : ils doivent être traduits en score lisible, en segment de risque et en recommandation underwriting.
 
@@ -555,7 +652,7 @@ La séparation des responsabilités est volontaire : le modèle ML calcule uniqu
 
 Les limites restent importantes. Les segments de risque reposent sur des seuils estimés à partir de l'analyse du test set et devront être recalibrés en conditions réelles. L'interprétation locale des facteurs individuels reste limitée tant que des valeurs SHAP ne sont pas intégrées. Enfin, toute utilisation opérationnelle nécessiterait une validation métier, un suivi du drift, une analyse coût/bénéfice et une gouvernance claire des décisions.
 
-# 19. Conclusion
+# 20. Conclusion
 
 Le projet met en place un pipeline reproductible pour prédire la survenance d'un sinistre en assurance voyage. Les scripts produisent une base nettoyée, une analyse exploratoire, un benchmark de modèles, une évaluation finale sur test set, une sauvegarde du modèle champion et une validation bootstrap.
 
