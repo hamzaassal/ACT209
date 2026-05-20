@@ -41,6 +41,9 @@ training_data_audit <- read_csv_if_exists(here("reports", "training_data_audit.c
 classification_metrics_by_model <- read_csv_if_exists(here("reports", "classification_metrics_by_model.csv"))
 smote_effect_on_metrics <- read_csv_if_exists(here("reports", "smote_effect_on_metrics.csv"))
 risk_ranking_lift_table <- read_csv_if_exists(here("reports", "risk_ranking_lift_table.csv"))
+model_comparison_smote_intensity <- read_csv_if_exists(here("reports", "model_comparison_smote_intensity.csv"))
+smote_intensity_class_balance <- read_csv_if_exists(here("reports", "smote_intensity_class_balance.csv"))
+xgboost_lift_by_smote_intensity <- read_csv_if_exists(here("reports", "xgboost_lift_by_smote_intensity.csv"))
 confusion_matrix <- read_csv_if_exists(here("reports", "confusion_matrix.csv"))
 metadata <- if (file.exists(here("models", "model_metadata.rds"))) readRDS(here("models", "model_metadata.rds")) else NULL
 ```
@@ -188,6 +191,63 @@ if (!is.null(smote_effect_on_metrics)) {
   kable(smote_effect_on_metrics, digits = 4, caption = "Effet de SMOTE sur les métriques par modèle")
 }
 ```
+
+## Sensibilité à l'intensité du rééquilibrage SMOTE
+
+L'analyse précédente utilise un SMOTE avec `over_ratio = 0.30`, ce qui revient à viser un ratio minoritaire / majoritaire d'environ 30 %. En proportion totale, cela produit environ 23 % de sinistres dans l'échantillon d'entraînement préparé. Cette intensité est nettement supérieure à la fréquence réelle des sinistres, proche de 1,7 %, et peut donc déformer la distribution d'apprentissage.
+
+SMOTE n'est pas une méthode automatiquement meilleure. Il peut aider le modèle à voir davantage de cas minoritaires, mais un rééquilibrage trop fort peut augmenter les faux positifs, dégrader la précision, perturber le ranking des scores ou réduire la PR AUC. Pour cette raison, une analyse complémentaire teste deux intensités plus modérées :
+
+- `smote_10` : `over_ratio = 0.111`, soit environ 10 % de sinistres et 90 % de non-sinistres ;
+- `smote_20` : `over_ratio = 0.25`, soit environ 20 % de sinistres et 80 % de non-sinistres.
+
+Le test set reste inchangé pour toutes les configurations. Le choix final ne doit donc pas se limiter à une seule métrique : il doit tenir compte à la fois des métriques de classification, de la PR AUC et de l'analyse de ranking/lift.
+
+```{r smote-intensity-balance}
+if (!is.null(smote_intensity_class_balance)) {
+  kable(
+    smote_intensity_class_balance,
+    digits = 4,
+    caption = "Proportions obtenues selon l'intensité de SMOTE"
+  )
+}
+```
+
+```{r smote-intensity-model-comparison}
+if (!is.null(model_comparison_smote_intensity)) {
+  smote_intensity_display <- model_comparison_smote_intensity %>%
+    select(
+      model, balancing_strategy, status, threshold, accuracy, precision,
+      recall, f1_score, roc_auc, pr_auc, predicted_positive,
+      false_positives, false_negatives, true_positives, true_negatives
+    )
+  kable(
+    smote_intensity_display,
+    digits = 4,
+    caption = "Comparaison des modèles selon l'intensité de SMOTE"
+  )
+}
+```
+
+```{r xgboost-lift-smote-intensity}
+if (!is.null(xgboost_lift_by_smote_intensity)) {
+  xgb_lift_display <- xgboost_lift_by_smote_intensity %>%
+    select(
+      balancing_strategy, segment, n_observations, n_claims_captured,
+      share_of_total_claims_captured, claim_rate_in_segment,
+      baseline_claim_rate, lift
+    )
+  kable(
+    xgb_lift_display,
+    digits = 4,
+    caption = "Analyse ranking/lift de XGBoost selon l'intensité de SMOTE"
+  )
+}
+```
+
+Les résultats indiquent que le modèle XGBoost sans rééquilibrage conserve la meilleure ROC AUC dans cette analyse complémentaire. Il conserve également le meilleur F1-score parmi les configurations non dégénérées et le meilleur lift dans le Top 10 % des scores. `smote_10` et `smote_20` modifient bien la distribution d'apprentissage, mais ne surpassent pas la stratégie `none` sur l'objectif de ranking : dans le Top 10 %, XGBoost sans SMOTE capture 100 sinistres, contre 92 avec `smote_10` et 90 avec `smote_20`.
+
+Cette lecture confirme que, dans ce portefeuille, le rééquilibrage synthétique doit être utilisé avec prudence. Pour un usage assurantiel orienté priorisation, la conservation de la distribution naturelle peut rester préférable lorsque le modèle produit déjà un score bien ordonné. L'analyse SMOTE demeure utile comme test de robustesse, mais elle ne justifie pas ici de remplacer le modèle champion XGBoost sans SMOTE.
 
 # 10. Comparaison des modèles
 

@@ -49,7 +49,9 @@ source("scripts/05_model_evaluation.R")
 source("scripts/06_save_model.R")
 source("scripts/07_bootstrap_validation.R")
 source("scripts/08_threshold_analysis.R")
+source("scripts/09_smote_training_audit.R")
 source("scripts/10_risk_ranking_lift_analysis.R")
+source("scripts/11_smote_intensity_analysis.R")
 ```
 
 ## Pipeline
@@ -62,14 +64,17 @@ source("scripts/10_risk_ranking_lift_analysis.R")
 - `06_save_model.R` : sauvegarde `models/best_model.rds` et `models/model_metadata.rds`.
 - `07_bootstrap_validation.R` : mesure la stabilité du modèle champion par bootstrap.
 - `08_threshold_analysis.R` : analyse le compromis precision/recall selon les seuils du modèle champion.
+- `09_smote_training_audit.R` : vérifie que SMOTE est appliqué uniquement au train/folds.
 - `10_risk_ranking_lift_analysis.R` : analyse le pouvoir de scoring et le lift du champion XGBoost sans SMOTE.
+- `11_smote_intensity_analysis.R` : compare `none`, `smote_10` et `smote_20` pour tester l'intensité du rééquilibrage.
 
 ## Modèles comparés
 
 Stratégies :
 
 - `none` : sans rééquilibrage ;
-- `smote` : SMOTE appliqué uniquement au train ou à l'intérieur des folds.
+- `smote` : SMOTE appliqué uniquement au train ou à l'intérieur des folds ;
+- analyse complémentaire : `smote_10` et `smote_20` pour tester un rééquilibrage plus modéré.
 
 Modèles entraînés :
 
@@ -111,6 +116,9 @@ Principaux artefacts :
 - `reports/training_data_audit.csv`
 - `reports/classification_metrics_by_model.csv`
 - `reports/smote_effect_on_metrics.csv`
+- `reports/model_comparison_smote_intensity.csv`
+- `reports/smote_intensity_class_balance.csv`
+- `reports/xgboost_lift_by_smote_intensity.csv`
 - `reports/final_metrics.csv`
 - `reports/bootstrap_results.csv`
 - `reports/bootstrap_summary.csv`
