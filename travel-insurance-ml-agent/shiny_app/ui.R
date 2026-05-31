@@ -56,6 +56,11 @@ app_ui <- page_navbar(
   ),
 
   nav_panel(
+    "Simulation tarifaire",
+    mod_pricing_simulation_ui("pricing")
+  ),
+
+  nav_panel(
     "Agent IA",
     mod_agent_chat_ui("agent")
   ),

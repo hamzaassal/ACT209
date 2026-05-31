@@ -7,78 +7,83 @@ mod_stat_exploration_ui <- function(id) {
   tagList(
     layout_columns(
       col_widths = c(4, 4, 4),
-      value_box("Observations", textOutput(ns("n_rows")), showcase = "n"),
-      value_box("Variables", textOutput(ns("n_cols")), showcase = "#"),
-      value_box("Taux de sinistre", textOutput(ns("claim_rate")), showcase = "%")
+      value_box("Observations", textOutput(ns("n_rows")), showcase = "n", height = "90px"),
+      value_box("Variables", textOutput(ns("n_cols")), showcase = "#", height = "90px"),
+      value_box("Taux de sinistre", textOutput(ns("claim_rate")), showcase = "%", height = "90px")
     ),
-    card(
-      card_header("Filtres"),
-      layout_columns(
-        col_widths = c(3, 3, 3, 3),
-        selectInput(ns("product_name"), "Produit", choices = "Tous"),
-        selectInput(ns("agency"), "Agence", choices = "Toutes"),
-        selectInput(ns("distribution_channel"), "Canal", choices = "Tous"),
-        selectInput(ns("destination"), "Destination", choices = "Toutes")
-      )
-    ),
-    navset_card_tab(
-      nav_panel(
-        "Numérique",
-        layout_columns(
-          col_widths = c(4, 8),
-          card(
-            card_header("Variable"),
-            selectInput(ns("numeric_var"), "Variable numérique", choices = character(0))
-          ),
-          card(
-            card_header("Distribution"),
-            plotly::plotlyOutput(ns("numeric_distribution"), height = "360px")
-          )
-        ),
-        card(
-          card_header("Statistiques univariées numériques"),
-          DT::DTOutput(ns("numeric_summary"))
+    layout_columns(
+      col_widths = c(3, 9),
+      card(
+        full_screen = FALSE,
+        card_header("Filtres"),
+        tags$div(
+          style = "display: grid; gap: 14px; overflow: visible;",
+          selectInput(ns("product_name"), "Produit", choices = "Tous", width = "100%"),
+          selectInput(ns("agency"), "Agence", choices = "Toutes", width = "100%"),
+          selectInput(ns("distribution_channel"), "Canal", choices = "Tous", width = "100%"),
+          selectInput(ns("destination"), "Destination", choices = "Toutes", width = "100%")
         )
       ),
-      nav_panel(
-        "Catégoriel",
-        layout_columns(
-          col_widths = c(4, 8),
-          card(
-            card_header("Variable"),
-            selectInput(ns("categorical_var"), "Variable catégorielle", choices = character(0))
-          ),
-          card(
-            card_header("Répartition"),
-            plotly::plotlyOutput(ns("categorical_distribution"), height = "360px")
-          )
-        ),
-        card(
-          card_header("Statistiques univariées catégorielles"),
-          DT::DTOutput(ns("categorical_summary"))
-        )
-      ),
-      nav_panel(
-        "Cible",
-        layout_columns(
-          col_widths = c(5, 7),
-          card(
-            card_header("Claim Status"),
-            plotly::plotlyOutput(ns("target_distribution"), height = "320px")
-          ),
-          card(
-            card_header("Taux de sinistre par variable"),
-            selectInput(
-              ns("rate_var"),
-              "Variable d'analyse",
-              choices = c("product_name", "agency", "destination", "distribution_channel", "age", "duration", "net_sales")
+      navset_card_tab(
+        nav_panel(
+          "Numerique",
+          layout_columns(
+            col_widths = c(4, 8),
+            card(
+              card_header("Variable"),
+              selectInput(ns("numeric_var"), "Variable numerique", choices = character(0), width = "100%")
             ),
-            plotly::plotlyOutput(ns("claim_rate_plot"), height = "320px")
+            card(
+              card_header("Distribution"),
+              plotly::plotlyOutput(ns("numeric_distribution"), height = "360px")
+            )
+          ),
+          card(
+            card_header("Statistiques univariees numeriques"),
+            DT::DTOutput(ns("numeric_summary"))
           )
         ),
-        card(
-          card_header("Tableau des taux de sinistre"),
-          DT::DTOutput(ns("claim_rate_table"))
+        nav_panel(
+          "Categoriel",
+          layout_columns(
+            col_widths = c(4, 8),
+            card(
+              card_header("Variable"),
+              selectInput(ns("categorical_var"), "Variable categorielle", choices = character(0), width = "100%")
+            ),
+            card(
+              card_header("Repartition"),
+              plotly::plotlyOutput(ns("categorical_distribution"), height = "360px")
+            )
+          ),
+          card(
+            card_header("Statistiques univariees categorielles"),
+            DT::DTOutput(ns("categorical_summary"))
+          )
+        ),
+        nav_panel(
+          "Cible",
+          layout_columns(
+            col_widths = c(5, 7),
+            card(
+              card_header("Claim Status"),
+              plotly::plotlyOutput(ns("target_distribution"), height = "320px")
+            ),
+            card(
+              card_header("Taux de sinistre par variable"),
+              selectInput(
+                ns("rate_var"),
+                "Variable d'analyse",
+                choices = c("product_name", "agency", "destination", "distribution_channel", "age", "duration", "net_sales"),
+                width = "100%"
+              ),
+              plotly::plotlyOutput(ns("claim_rate_plot"), height = "320px")
+            )
+          ),
+          card(
+            card_header("Tableau des taux de sinistre"),
+            DT::DTOutput(ns("claim_rate_table"))
+          )
         )
       )
     )
@@ -105,7 +110,7 @@ mod_stat_exploration_server <- function(id) {
     })
 
     filtered_data <- reactive({
-      validate(need(has_data(), "Données nettoyées indisponibles : relancez scripts/01_import_data.R."))
+      validate(need(has_data(), "Donnees nettoyees indisponibles : relancez scripts/01_import_data.R."))
 
       df <- data_clean
       if (!is.null(input$product_name) && input$product_name != "Tous") {
@@ -138,7 +143,7 @@ mod_stat_exploration_server <- function(id) {
     output$numeric_summary <- DT::renderDT({
       df <- filtered_data()
       numeric_vars <- names(df)[vapply(df, is.numeric, logical(1))]
-      validate(need(length(numeric_vars) > 0, "Aucune variable numérique disponible."))
+      validate(need(length(numeric_vars) > 0, "Aucune variable numerique disponible."))
 
       summary <- purrr::map_dfr(numeric_vars, function(variable) {
         x <- df[[variable]]
@@ -161,7 +166,7 @@ mod_stat_exploration_server <- function(id) {
     output$numeric_distribution <- plotly::renderPlotly({
       df <- filtered_data()
       req(input$numeric_var)
-      validate(need(input$numeric_var %in% names(df), "Variable numérique indisponible."))
+      validate(need(input$numeric_var %in% names(df), "Variable numerique indisponible."))
 
       plotly::plot_ly(
         data = df,
@@ -181,7 +186,7 @@ mod_stat_exploration_server <- function(id) {
     output$categorical_summary <- DT::renderDT({
       df <- filtered_data()
       req(input$categorical_var)
-      validate(need(input$categorical_var %in% names(df), "Variable catégorielle indisponible."))
+      validate(need(input$categorical_var %in% names(df), "Variable categorielle indisponible."))
 
       summary <- df %>%
         mutate(category = as.character(.data[[input$categorical_var]])) %>%
@@ -198,7 +203,7 @@ mod_stat_exploration_server <- function(id) {
     output$categorical_distribution <- plotly::renderPlotly({
       df <- filtered_data()
       req(input$categorical_var)
-      validate(need(input$categorical_var %in% names(df), "Variable catégorielle indisponible."))
+      validate(need(input$categorical_var %in% names(df), "Variable categorielle indisponible."))
 
       plot_data <- df %>%
         mutate(category = as.character(.data[[input$categorical_var]])) %>%
@@ -253,7 +258,7 @@ mod_stat_exploration_server <- function(id) {
 
     output$claim_rate_plot <- plotly::renderPlotly({
       plot_data <- claim_rate_data() %>% slice_head(n = 20) %>% arrange(claim_rate)
-      validate(need(nrow(plot_data) > 0, "Aucune modalité avec suffisamment d'observations."))
+      validate(need(nrow(plot_data) > 0, "Aucune modalite avec suffisamment d'observations."))
 
       plotly::plot_ly(plot_data, x = ~claim_rate, y = ~bucket, type = "bar", orientation = "h") %>%
         plotly::layout(

@@ -7,5 +7,6 @@ app_server <- function(input, output, session) {
 
   scoring <- mod_client_scoring_server("scoring")
 
+  mod_pricing_simulation_server("pricing", scoring$client_data, scoring$prediction_result)
   mod_agent_chat_server("agent", scoring$client_data, scoring$prediction_result)
 }

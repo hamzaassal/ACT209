@@ -41,6 +41,7 @@ source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_agent_chat.R"), loca
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_client_scoring.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_stat_exploration.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_ml_summary.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_pricing_simulation.R"), local = TRUE)
 
 safe_read_rds <- function(path) {
   if (!file.exists(path)) {
