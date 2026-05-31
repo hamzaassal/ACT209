@@ -1,7 +1,7 @@
 # global.R
 # Chargement global de l'application Shiny underwriting.
 
-required_packages <- c("shiny", "bslib", "yaml", "dplyr", "tidymodels")
+required_packages <- c("shiny", "bslib", "yaml", "dplyr", "tidymodels", "DT", "plotly", "purrr", "tibble")
 missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing_packages) > 0) {
   stop(
@@ -38,6 +38,9 @@ source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_input_client.R"), lo
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_score_output.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_risk_explanation.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_agent_chat.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_client_scoring.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_stat_exploration.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_ml_summary.R"), local = TRUE)
 
 safe_read_rds <- function(path) {
   if (!file.exists(path)) {
@@ -46,9 +49,28 @@ safe_read_rds <- function(path) {
   readRDS(path)
 }
 
+safe_read_csv <- function(path) {
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+}
+
+round_numeric <- function(data, digits = 4) {
+  data %>%
+    mutate(across(where(is.numeric), ~ round(.x, digits)))
+}
+
 best_model <- safe_read_rds(file.path(PROJECT_ROOT, "models", "best_model.rds"))
 model_metadata <- safe_read_rds(file.path(PROJECT_ROOT, "models", "model_metadata.rds"))
+data_clean <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "data_clean.rds"))
 train_data <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "train_data.rds"))
+test_data <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "test_data.rds"))
+model_comparison <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "model_comparison.csv"))
+model_ranking <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "model_ranking.csv"))
+final_metrics <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "final_metrics.csv"))
+confusion_matrix <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "confusion_matrix.csv"))
+class_balance_summary <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "class_balance_summary.csv"))
 risk_segments <- yaml::read_yaml(file.path(PROJECT_ROOT, "config", "risk_segments.yml"))
 app_config <- yaml::read_yaml(file.path(PROJECT_ROOT, "config", "app_config.yml"))
 
@@ -77,11 +99,11 @@ get_operational_threshold <- function() {
   if (!is.null(model_metadata) && !is.null(model_metadata$threshold_analysis$business_threshold$threshold)) {
     return(as.numeric(model_metadata$threshold_analysis$business_threshold$threshold))
   }
-  if (!is.null(app_config$app$default_threshold)) {
-    return(as.numeric(app_config$app$default_threshold))
-  }
   if (!is.null(model_metadata) && !is.null(model_metadata$decision_threshold$threshold)) {
     return(as.numeric(model_metadata$decision_threshold$threshold))
+  }
+  if (!is.null(app_config$app$default_threshold)) {
+    return(as.numeric(app_config$app$default_threshold))
   }
   as.numeric(app_config$app$fallback_threshold %||% 0.08)
 }

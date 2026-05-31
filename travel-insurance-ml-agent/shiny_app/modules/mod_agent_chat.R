@@ -38,12 +38,15 @@ mod_agent_chat_server <- function(id, client_data, prediction_result) {
     })
 
     answer <- eventReactive(input$ask, {
+      validate(need(client_data()$calculate > 0, "Calculez d'abord un score dans l'onglet Scoring client."))
       req(client_data()$data, prediction_result(), input$question)
       call_llm_agent(input$question, client_data()$data, prediction_result())
     })
 
     output$answer <- renderText({
-      req(answer())
+      if (input$ask == 0) {
+        return("Calculez d'abord un score dans l'onglet Scoring client, puis interrogez l'agent.")
+      }
       answer()
     })
   })

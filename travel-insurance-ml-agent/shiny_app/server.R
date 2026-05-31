@@ -2,14 +2,10 @@
 # Serveur principal de l'application.
 
 app_server <- function(input, output, session) {
-  client_data <- mod_input_client_server("client")
+  mod_stat_exploration_server("stats")
+  mod_ml_summary_server("ml")
 
-  prediction_result <- eventReactive(client_data()$calculate, {
-    req(client_data()$data)
-    predict_claim_risk(client_data()$data)
-  }, ignoreInit = TRUE)
+  scoring <- mod_client_scoring_server("scoring")
 
-  mod_score_output_server("score", prediction_result)
-  mod_risk_explanation_server("risk", client_data, prediction_result)
-  mod_agent_chat_server("agent", client_data, prediction_result)
+  mod_agent_chat_server("agent", scoring$client_data, scoring$prediction_result)
 }

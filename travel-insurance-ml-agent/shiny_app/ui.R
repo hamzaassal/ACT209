@@ -20,7 +20,7 @@ app_ui <- page_navbar(
       card(
         card_header("Objectif du prototype"),
         p("Cette application estime un score de risque de sinistre pour un dossier d'assurance voyage."),
-        p("Le score est produit par le modèle champion XGBoost sans SMOTE et doit être interprété comme une aide à la décision underwriting."),
+        p("Le score est produit par le modèle champion sauvegardé et doit être interprété comme une aide à la décision underwriting."),
         tags$div(
           class = "warning-box",
           strong("Important : "),
@@ -31,40 +31,28 @@ app_ui <- page_navbar(
         card_header("Logique scoring/ranking"),
         p("Le modèle trie les dossiers selon leur probabilité estimée de sinistre."),
         tags$ul(
-          tags$li("Top 1 % : taux de sinistre 16,22 %, lift 9,64"),
-          tags$li("Top 5 % : 32,80 % des sinistres capturés, lift 6,56"),
-          tags$li("Top 10 % : 53,76 % des sinistres capturés, lift 5,37"),
-          tags$li("Top 20 % : 70,43 % des sinistres capturés, lift 3,52")
+          tags$li("Top 1 % : segment des scores les plus élevés."),
+          tags$li("Top 5 % et Top 10 % : segments utiles pour prioriser les revues underwriting."),
+          tags$li("Top 20 % : vision élargie des dossiers à surveiller."),
+          tags$li("Les taux et lifts détaillés sont disponibles dans les onglets Exploration statistique et Synthèse Machine Learning.")
         )
       )
     )
   ),
 
   nav_panel(
-    "Saisie dossier",
-    layout_columns(
-      col_widths = c(5, 7),
-      mod_input_client_ui("client"),
-      card(
-        card_header("Aide de saisie"),
-        p("Saisissez les caractéristiques du dossier telles qu'elles sont attendues par le modèle."),
-        p("Les valeurs par défaut sont réalistes et servent uniquement à tester l'application."),
-        tags$div(
-          class = "info-box",
-          "Après calcul, consultez les onglets Résultat scoring, Analyse métier et Agent IA."
-        )
-      )
-    )
+    "Exploration statistique",
+    mod_stat_exploration_ui("stats")
   ),
 
   nav_panel(
-    "Résultat scoring",
-    mod_score_output_ui("score")
+    "Synthèse Machine Learning",
+    mod_ml_summary_ui("ml")
   ),
 
   nav_panel(
-    "Analyse métier",
-    mod_risk_explanation_ui("risk")
+    "Scoring client",
+    mod_client_scoring_ui("scoring")
   ),
 
   nav_panel(
