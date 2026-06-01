@@ -1,0 +1,239 @@
+config_id,model,strategy,over_ratio,scale_pos_weight,colsample_bytree,threshold,trees,tree_depth,learn_rate,loss_reduction,min_n,sample_size,accuracy,precision,recall,f1,roc_auc,pr_auc,predicted_positive,false_positives,false_negatives,true_positives,true_negatives,error,rank
+8,xgboost,none,NA,1,1,0.02,100,3,0.03,0.5,25,1,0.9620150131138645,0.12012987012987013,0.1989247311827957,0.14979757085020243,0.7660664706237271,0.05972968357456474,308,271,149,37,10600,NA,1
+1,xgboost,none,NA,1,1,0.04,200,4,0.05,0,10,1,0.9679840824816858,0.12162162162162163,0.14516129032258066,0.1323529411764706,0.7620756318230509,0.07235528674993608,222,195,159,27,10676,NA,2
+4,xgboost,none,NA,1,1,0.02,100,3,0.05,0,25,1,0.8803472913086733,0.07029478458049887,0.5,0.12326043737574553,0.755190142858132,0.08248095238199388,1323,1230,93,93,9641,NA,3
+2,xgboost,none,NA,1,1,0.03,200,4,0.03,0,10,1,0.9650899882427422,0.11538461538461539,0.16129032258064516,0.1345291479820628,0.7449030813954064,0.1022472206757397,260,230,156,30,10641,NA,4
+5,xgboost,none,NA,1,1,0.01,100,4,0.05,0,10,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.743380088882031,0.05008846619213938,11057,10871,0,186,0,NA,5
+7,xgboost,none,NA,1,1,0.02,100,4,0.03,0.5,25,1,0.8976214162973681,0.07464028776978417,0.44623655913978494,0.1278890600924499,0.7360388643752788,0.08447880446694121,1112,1029,103,83,9842,NA,6
+6,xgboost,none,NA,1,1,0.02,100,4,0.05,0.5,10,1,0.8646106538844172,0.071288423806409415,0.5860215053763441,0.1271137026239067,0.7264429482405097,0.0768963464595906,1529,1420,77,109,9451,NA,7
+3,xgboost,none,NA,1,1,0.02,100,3,0.03,0,10,1,0.9484489463688162,0.05555555555555555,0.12903225806451613,0.07766990291262135,0.7262290517436645,0.07322590720367975,432,408,162,24,10463,NA,8
+48,xgboost,smote_weighted_30,0.3,50,1,0.01,200,2,0.05,0.5,25,1,0.98317807723614,NA,0,NA,0.6891589342464859,0.058565004061835124,0,0,186,0,10871,NA,9
+38,xgboost,smote_weighted_50,0.5,10,1,0.01,200,3,0.05,0.5,25,0.7,0.9680745229266527,0.13537117903930132,0.16666666666666666,0.1493975903614458,0.6871478126177667,0.0591585779793609,229,198,155,31,10673,NA,10
+29,xgboost,smote_weighted_30,0.3,59.17278911564626,1,0.01,100,4,0.03,0.5,25,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6870194747196596,0.055132660004846366,11057,10871,0,186,0,NA,11
+54,xgboost,smote_weighted_30,0.3,10,1,0.04,100,4,0.05,0,25,1,0.9605679659943926,0.12574850299401197,0.22580645161290322,0.16153846153846152,0.6799507518770963,0.06035513414105686,334,292,144,42,10579,NA,12
+21,xgboost,smote_weighted_50,0.5,50,1,0.01,200,4,0.01,0,25,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6751686196776864,0.05585284768893161,11057,10871,0,186,0,NA,13
+88,xgboost,smote_weighted_50,0.5,10,1,0.01,200,2,0.03,1,25,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.664068998806136,0.06760340870821893,11057,10871,0,186,0,NA,14
+26,xgboost,smote_weighted_50,0.5,50,1,0.01,200,2,0.03,0,25,1,0.98317807723614,NA,0,NA,0.6617843863964795,0.06696480928084349,0,0,186,0,10871,NA,15
+81,xgboost,smote_weighted_30,0.3,50,1,0.01,200,2,0.01,1,10,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6564903862797637,0.06257107788821467,11057,10871,0,186,0,NA,16
+94,xgboost,smote_weighted_30,0.3,10,1,0.01,100,4,0.01,1,25,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6355072635788419,0.06995660590282446,11057,10871,0,186,0,NA,17
+22,xgboost,smote_weighted_50,0.5,50,1,0.01,100,4,0.05,1,50,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.631028542942009,0.0833266484284902,11057,10871,0,186,0,NA,18
+27,xgboost,smote_weighted_50,0.5,59.17278911564626,1,0.01,100,4,0.05,0.5,25,0.7,0.966084833137379,0.13229571984435798,0.1827956989247312,0.15349887133182843,0.6270720759483404,0.10986782931861454,257,223,152,34,10648,NA,19
+49,xgboost,smote_weighted_50,0.5,50,1,0.01,200,3,0.05,1,10,0.7,0.98317807723614,NA,0,NA,0.6209140823518822,0.08852071831211061,0,0,186,0,10871,NA,20
+66,xgboost,smote_weighted_50,0.5,5,1,0.01,100,2,0.05,1,25,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6176868416809842,0.17359923588680828,11057,10871,0,186,0,NA,21
+79,xgboost,smote_weighted_50,0.5,5,1,0.01,200,2,0.01,1,50,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.6176868416809842,0.17359923588680828,11057,10871,0,186,0,NA,22
+73,xgboost,smote_weighted_50,0.5,59.17278911564626,1,0.01,200,2,0.03,1,50,0.7,0.9570407886406801,0.11466666666666667,0.23118279569892472,0.1532976827094474,0.6176796705845581,0.12946793184449892,375,332,143,43,10539,NA,23
+53,xgboost,smote_weighted_50,0.5,10,1,0.01,200,4,0.01,0,25,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5952333969335403,0.07329244143860744,11057,10871,0,186,0,NA,24
+58,xgboost,smote_weighted_50,0.5,5,1,0.06999999999999999,100,2,0.03,1,50,1,0.8372976395043864,0.02753368482718219,0.25268817204301075,0.049656629688325404,0.5711545860892598,0.1456616110557205,1707,1660,139,47,9211,NA,25
+25,xgboost,smote_weighted_50,0.5,1,1,0.01,200,2,0.03,0.5,10,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5711545860892598,0.1456616110557205,11057,10871,0,186,0,NA,26
+30,xgboost,smote_weighted_50,0.5,59.17278911564626,1,0.01,200,2,0.03,0,25,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5711545860892598,0.1456616110557205,11057,10871,0,186,0,NA,27
+47,xgboost,smote_weighted_50,0.5,10,1,0.01,100,4,0.01,0.5,50,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,28
+51,xgboost,smote_weighted_50,0.5,10,1,0.01,100,2,0.03,0.5,25,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,29
+61,xgboost,smote_weighted_30,0.3,1,1,0.01,100,4,0.01,0.5,50,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,30
+74,xgboost,smote_weighted_50,0.5,59.17278911564626,1,0.01,100,2,0.03,0.5,10,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,31
+78,xgboost,smote_weighted_50,0.5,50,1,0.01,100,2,0.03,0,10,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,32
+87,xgboost,smote_weighted_30,0.3,5,1,0.01,200,3,0.05,1,50,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,33
+95,xgboost,smote_weighted_50,0.5,50,1,0.01,200,2,0.01,0,25,1,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,34
+104,xgboost,smote_weighted_30,0.3,25,1,0.01,200,4,0.03,0.5,25,0.7,0.01682192276386,0.01682192276386,1,0.0330872542915592,0.5,0.50841096138193,11057,10871,0,186,0,NA,35
+43,xgboost,smote_weighted_50,0.5,25,1,0.01,100,4,0.05,0,10,0.7,0.98317807723614,NA,0,NA,0.5,0.50841096138193,0,0,186,0,10871,NA,36
+86,xgboost,smote_weighted_50,0.5,50,1,0.01,100,2,0.05,0.5,25,0.7,0.98317807723614,NA,0,NA,0.5,0.50841096138193,0,0,186,0,10871,NA,37
+9,xgboost,smote_weighted_30,0.3,59.17278911564626,0.8,NA,100,4,0.01,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",38
+10,xgboost,smote_weighted_30,0.3,1,0.8,NA,100,3,0.01,0.5,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",39
+11,xgboost,smote_weighted_50,0.5,1,0.8,NA,200,4,0.03,1,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",40
+12,xgboost,smote_weighted_50,0.5,50,0.8,NA,100,2,0.05,0,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",41
+13,xgboost,smote_weighted_50,0.5,5,0.6,NA,200,2,0.03,1,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",42
+14,xgboost,smote_weighted_30,0.3,25,0.6,NA,100,2,0.05,0.5,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",43
+15,xgboost,smote_weighted_30,0.3,1,0.6,NA,100,3,0.03,0.5,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",44
+16,xgboost,smote_weighted_30,0.3,50,0.8,NA,200,3,0.01,1,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",45
+17,xgboost,smote_weighted_30,0.3,5,0.6,NA,100,4,0.05,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",46
+18,xgboost,smote_weighted_50,0.5,1,0.6,NA,200,2,0.01,0.5,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",47
+19,xgboost,smote_weighted_50,0.5,1,0.6,NA,200,4,0.03,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",48
+20,xgboost,smote_weighted_30,0.3,50,0.6,NA,100,4,0.03,0.5,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",49
+23,xgboost,smote_weighted_50,0.5,25,0.8,NA,100,4,0.01,0,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",50
+24,xgboost,smote_weighted_30,0.3,1,0.8,NA,100,2,0.03,1,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",51
+28,xgboost,smote_weighted_30,0.3,5,0.6,NA,100,3,0.03,1,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",52
+31,xgboost,smote_weighted_30,0.3,1,0.6,NA,200,4,0.05,0.5,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",53
+32,xgboost,smote_weighted_50,0.5,10,0.6,NA,200,2,0.01,0,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",54
+33,xgboost,smote_weighted_50,0.5,10,0.8,NA,100,3,0.03,0,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",55
+34,xgboost,smote_weighted_30,0.3,59.17278911564626,0.8,NA,200,2,0.03,0.5,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",56
+35,xgboost,smote_weighted_30,0.3,10,0.8,NA,100,2,0.01,0,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",57
+36,xgboost,smote_weighted_30,0.3,25,0.6,NA,100,2,0.01,0,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",58
+37,xgboost,smote_weighted_30,0.3,5,0.6,NA,200,4,0.01,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",59
+39,xgboost,smote_weighted_50,0.5,25,0.6,NA,200,2,0.03,0.5,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",60
+40,xgboost,smote_weighted_30,0.3,5,0.8,NA,200,3,0.01,0.5,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",61
+41,xgboost,smote_weighted_30,0.3,25,0.6,NA,100,3,0.05,0,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",62
+42,xgboost,smote_weighted_30,0.3,25,0.6,NA,200,3,0.05,0,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",63
+44,xgboost,smote_weighted_30,0.3,50,0.8,NA,100,4,0.01,0.5,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",64
+45,xgboost,smote_weighted_50,0.5,50,0.6,NA,100,3,0.03,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",65
+46,xgboost,smote_weighted_30,0.3,59.17278911564626,0.8,NA,200,3,0.05,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",66
+50,xgboost,smote_weighted_50,0.5,10,0.8,NA,200,4,0.01,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",67
+52,xgboost,smote_weighted_50,0.5,5,0.6,NA,200,3,0.05,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",68
+55,xgboost,smote_weighted_50,0.5,50,0.6,NA,100,4,0.01,0,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",69
+56,xgboost,smote_weighted_50,0.5,10,0.6,NA,200,4,0.05,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",70
+57,xgboost,smote_weighted_30,0.3,10,0.6,NA,100,4,0.03,0.5,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",71
+59,xgboost,smote_weighted_50,0.5,10,0.6,NA,100,4,0.01,0.5,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",72
+60,xgboost,smote_weighted_50,0.5,59.17278911564626,0.8,NA,200,3,0.03,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",73
+62,xgboost,smote_weighted_30,0.3,10,0.8,NA,100,2,0.05,0.5,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",74
+63,xgboost,smote_weighted_50,0.5,1,0.6,NA,200,4,0.05,0,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",75
+64,xgboost,smote_weighted_50,0.5,1,0.6,NA,100,4,0.05,1,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",76
+65,xgboost,smote_weighted_30,0.3,10,0.8,NA,200,3,0.01,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",77
+67,xgboost,smote_weighted_50,0.5,59.17278911564626,0.6,NA,100,4,0.03,0,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",78
+68,xgboost,smote_weighted_50,0.5,10,0.6,NA,200,4,0.01,0,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",79
+69,xgboost,smote_weighted_50,0.5,10,0.6,NA,100,4,0.05,0.5,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",80
+70,xgboost,smote_weighted_30,0.3,59.17278911564626,0.8,NA,100,4,0.01,0.5,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",81
+71,xgboost,smote_weighted_50,0.5,59.17278911564626,0.8,NA,100,2,0.01,1,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",82
+72,xgboost,smote_weighted_30,0.3,59.17278911564626,0.8,NA,200,2,0.03,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",83
+75,xgboost,smote_weighted_50,0.5,5,0.6,NA,200,2,0.05,0.5,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",84
+76,xgboost,smote_weighted_30,0.3,1,0.8,NA,200,4,0.03,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",85
+77,xgboost,smote_weighted_50,0.5,1,0.6,NA,100,3,0.05,0,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",86
+80,xgboost,smote_weighted_50,0.5,5,0.6,NA,200,4,0.01,1,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",87
+82,xgboost,smote_weighted_50,0.5,59.17278911564626,0.8,NA,100,2,0.01,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",88
+83,xgboost,smote_weighted_30,0.3,25,0.8,NA,100,4,0.03,1,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",89
+84,xgboost,smote_weighted_30,0.3,25,0.8,NA,200,3,0.03,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",90
+85,xgboost,smote_weighted_50,0.5,25,0.8,NA,200,3,0.01,1,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",91
+89,xgboost,smote_weighted_30,0.3,50,0.8,NA,100,4,0.03,1,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",92
+90,xgboost,smote_weighted_30,0.3,5,0.8,NA,200,3,0.05,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",93
+91,xgboost,smote_weighted_50,0.5,59.17278911564626,0.8,NA,200,2,0.05,0.5,10,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",94
+92,xgboost,smote_weighted_30,0.3,50,0.6,NA,100,3,0.05,0.5,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",95
+93,xgboost,smote_weighted_50,0.5,25,0.6,NA,100,4,0.03,0,25,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",96
+96,xgboost,smote_weighted_50,0.5,25,0.8,NA,200,3,0.05,1,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",97
+97,xgboost,smote_weighted_50,0.5,25,0.8,NA,200,3,0.05,0,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",98
+98,xgboost,smote_weighted_30,0.3,10,0.8,NA,100,3,0.03,1,25,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",99
+99,xgboost,smote_weighted_50,0.5,1,0.6,NA,200,3,0.05,1,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",100
+100,xgboost,smote_weighted_50,0.5,10,0.8,NA,100,4,0.01,1,50,0.7,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",101
+101,xgboost,smote_weighted_30,0.3,1,0.6,NA,200,4,0.01,0,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.6.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",102
+102,xgboost,smote_weighted_50,0.5,50,0.8,NA,200,4,0.03,1,10,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",103
+103,xgboost,smote_weighted_30,0.3,1,0.8,NA,200,2,0.05,1,50,1,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"The option `counts = TRUE` was used but `colsample_bytree` was given as
+0.8.
+ℹ Please use a value >= 1 or use `counts = FALSE`.",104

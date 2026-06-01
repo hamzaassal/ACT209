@@ -28,7 +28,7 @@ generate_recommendation <- function(probability, risk_segment, lift, claim_rate)
     )
   }
 
-  if (risk_segment %in% c("Modéré à élevé", "Modéré") || lift >= 2) {
+  if (risk_segment %in% c("Modéré à élevé", "Modéré", "Modéré faible") || lift >= 2) {
     return(
       paste(
         "Revue standard conseillée : le dossier présente un score supérieur à la moyenne,",

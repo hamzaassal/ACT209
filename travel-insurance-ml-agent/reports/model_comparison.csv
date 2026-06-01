@@ -1,16 +1,16 @@
 model,strategy,status,reason,config_id,.metric,.estimator,mean,n,std_err
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,accuracy,NA,NA,NA,NA
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,f_meas,NA,NA,NA,NA
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,pr_auc,NA,NA,NA,NA
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,precision,NA,NA,NA,NA
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,recall,NA,NA,NA,NA
-catboost,none,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__none,roc_auc,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,accuracy,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,f_meas,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,pr_auc,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,precision,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,recall,NA,NA,NA,NA
-catboost,smote,skipped,Package catboost indisponible pour cette version de R via CRAN ; configuration conservee mais non executee.,catboost__smote,roc_auc,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,accuracy,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,f_meas,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,pr_auc,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,precision,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,recall,NA,NA,NA,NA
+catboost,none,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__none,roc_auc,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,accuracy,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,f_meas,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,pr_auc,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,precision,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,recall,NA,NA,NA,NA
+catboost,smote,failed,CatBoost detecte mais aucun moteur tidymodels stable n'est configure dans ce pipeline.,catboost__smote,roc_auc,NA,NA,NA,NA
 decision_tree,none,trained,NA,decision_tree__none,accuracy,binary,0.016618807515770908,1,NA
 decision_tree,none,trained,NA,decision_tree__none,f_meas,binary,0.03269427516569547,1,NA
 decision_tree,none,trained,NA,decision_tree__none,pr_auc,binary,0.10848754594863226,1,NA
@@ -47,15 +47,15 @@ random_forest,smote,trained,NA,random_forest__smote,pr_auc,binary,0.074940645768
 random_forest,smote,trained,NA,random_forest__smote,precision,binary,0.08164263016377414,1,NA
 random_forest,smote,trained,NA,random_forest__smote,recall,binary,0.454421768707483,1,NA
 random_forest,smote,trained,NA,random_forest__smote,roc_auc,binary,0.7922879084495014,1,NA
-xgboost,none,trained,NA,xgboost__none,accuracy,binary,0.9477694620932914,1,NA
-xgboost,none,trained,NA,xgboost__none,f_meas,binary,0.1532258064516129,1,NA
-xgboost,none,trained,NA,xgboost__none,pr_auc,binary,0.0846452877359246,1,NA
-xgboost,none,trained,NA,xgboost__none,precision,binary,0.10486703462117411,1,NA
-xgboost,none,trained,NA,xgboost__none,recall,binary,0.28435374149659864,1,NA
-xgboost,none,trained,NA,xgboost__none,roc_auc,binary,0.810348685597664,1,NA
-xgboost,smote,trained,NA,xgboost__smote,accuracy,binary,0.9115020236507111,1,NA
-xgboost,smote,trained,NA,xgboost__smote,f_meas,binary,0.14316987740805603,1,NA
-xgboost,smote,trained,NA,xgboost__smote,pr_auc,binary,0.07667160417310151,1,NA
-xgboost,smote,trained,NA,xgboost__smote,precision,binary,0.08531176624054265,1,NA
-xgboost,smote,trained,NA,xgboost__smote,recall,binary,0.4448979591836735,1,NA
-xgboost,smote,trained,NA,xgboost__smote,roc_auc,binary,0.8077643804693772,1,NA
+xgboost,none,trained,NA,xgboost__none,accuracy,binary,0.9596174282678002,1,NA
+xgboost,none,trained,NA,xgboost__none,f_meas,binary,0.1446360153256705,1,NA
+xgboost,none,trained,NA,xgboost__none,pr_auc,binary,0.07983086116810686,1,NA
+xgboost,none,trained,NA,xgboost__none,precision,binary,0.11160384331116038,1,NA
+xgboost,none,trained,NA,xgboost__none,recall,binary,0.2054421768707483,1,NA
+xgboost,none,trained,NA,xgboost__none,roc_auc,binary,0.807332226553824,1,NA
+xgboost,smote,trained,NA,xgboost__smote,accuracy,binary,0.911547244895652,1,NA
+xgboost,smote,trained,NA,xgboost__smote,f_meas,binary,0.14285714285714285,1,NA
+xgboost,smote,trained,NA,xgboost__smote,pr_auc,binary,0.07693395069117115,1,NA
+xgboost,smote,trained,NA,xgboost__smote,precision,binary,0.08513972316531732,1,NA
+xgboost,smote,trained,NA,xgboost__smote,recall,binary,0.4435374149659864,1,NA
+xgboost,smote,trained,NA,xgboost__smote,roc_auc,binary,0.8090242415369532,1,NA

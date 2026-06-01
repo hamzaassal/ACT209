@@ -1,0 +1,2 @@
+candidate_model,strategy,tuned_or_not,roc_auc,pr_auc,f1,recall,precision,lift_top_10,claims_captured_top_10,lift_top_20,claims_captured_top_20,final_rank,recommendation
+xgboost,smote,FALSE,0.821797511975731,0.08451354663124079,0.14128440366972478,0.41397849462365593,0.08517699115044247,4.837397188356763,0.4838709677419355,3.54742460479496,0.7096774193548387,1,"Modele retenu dans la version SMOTE : meilleur rappel des sinistres et champion du benchmark de validation croisee."

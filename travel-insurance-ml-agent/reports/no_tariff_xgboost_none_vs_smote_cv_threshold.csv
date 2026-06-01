@@ -1,0 +1,3 @@
+model,strategy,over_ratio,threshold,selection_metric,accuracy,precision,recall,f1,roc_auc,pr_auc,predicted_positive,false_positives,false_negatives,true_positives,true_negatives,rank_f1
+xgboost,none,NA,0.09,f1_then_roc_auc_for_no_tariff_detection,0.966717916252148,0.12083333333333333,0.15591397849462366,0.13615023474178403,0.8179320437229167,0.0794943218845626,240,211,157,29,10660,1
+xgboost,smote,0.3,0.37,f1_then_roc_auc_for_no_tariff_detection,0.9597540019896897,0.01858736059479554,0.026881720430107527,0.021978021978021976,0.6096406242117975,0.02373649309492002,269,264,181,5,10607,2

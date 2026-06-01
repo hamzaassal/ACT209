@@ -439,7 +439,7 @@ catboost_row <- tibble(
 hyperparameter_tuning_results <- bind_rows(hyperparameter_tuning_results, catboost_row) %>%
   arrange(model_variant, desc(cv_roc_auc), desc(cv_pr_auc))
 
-write_csv(hyperparameter_tuning_results, here("reports", "hyperparameter_tuning_results.csv"))
+write_csv(hyperparameter_tuning_results, here("reports", "hyperparameter_tuning_cv_results.csv"))
 
 best_tuned_models <- hyperparameter_tuning_results %>%
   filter(status == "trained") %>%
@@ -573,5 +573,87 @@ print(best_tuned_models)
 print(tuned_model_test_metrics)
 print(tuned_model_lift_analysis)
 if (!is.null(champion_comparison)) print(champion_comparison)
+
+existing_tuned_metrics <- tuned_model_test_metrics %>%
+  transmute(
+    model = model,
+    strategy = model_variant,
+    hyperparameters = config_id,
+    accuracy = accuracy,
+    precision = precision,
+    recall = recall,
+    f1 = f1_score,
+    roc_auc = roc_auc,
+    pr_auc = pr_auc,
+    threshold = threshold,
+    notes = "Résultat issu de scripts/09_hyperparameter_tuning.R"
+  )
+
+catboost_standard_results <- if (file.exists(here("reports", "catboost_test_metrics.csv"))) {
+  read_csv(here("reports", "catboost_test_metrics.csv"), show_col_types = FALSE) %>%
+    transmute(
+      model = model,
+      strategy = strategy,
+      hyperparameters = hyperparameters,
+      accuracy = accuracy,
+      precision = precision,
+      recall = recall,
+      f1 = f1,
+      roc_auc = roc_auc,
+      pr_auc = pr_auc,
+      threshold = threshold,
+      notes = "CatBoost natif ; SMOTE uniquement sur train pour la stratégie smote."
+    )
+} else {
+  tibble()
+}
+
+write_csv(
+  bind_rows(existing_tuned_metrics, catboost_standard_results),
+  here("reports", "hyperparameter_tuning_results.csv")
+)
+
+best_existing <- best_tuned_models %>%
+  transmute(
+    model = model,
+    strategy = model_variant,
+    selected_hyperparameters = paste0(
+      "config_id=", config_id,
+      "; trees=", trees,
+      "; tree_depth=", tree_depth,
+      "; learn_rate=", learn_rate,
+      "; min_n=", min_n,
+      "; mtry=", mtry,
+      "; scale_pos_weight=", scale_pos_weight,
+      "; smote_over_ratio=", smote_over_ratio
+    ),
+    selection_metric = "cv_roc_auc",
+    selected_metric_value = cv_roc_auc,
+    comments = "Meilleur par famille dans le tuning XGBoost/Random Forest."
+  )
+
+best_catboost_summary <- if (file.exists(here("reports", "catboost_hyperparameter_results.csv"))) {
+  read_csv(here("reports", "catboost_hyperparameter_results.csv"), show_col_types = FALSE) %>%
+    filter(is.na(error), !is.na(cv_roc_auc)) %>%
+    group_by(strategy) %>%
+    arrange(desc(cv_roc_auc), desc(cv_pr_auc), desc(cv_f1), .by_group = TRUE) %>%
+    slice(1) %>%
+    ungroup() %>%
+    transmute(
+      model = "catboost",
+      strategy = strategy,
+      selected_hyperparameters = hyperparameters,
+      selection_metric = "cv_roc_auc",
+      selected_metric_value = cv_roc_auc,
+      comments = "Meilleur CatBoost par stratégie selon validation croisée stratifiée."
+    )
+} else {
+  tibble()
+}
+
+write_csv(
+  bind_rows(best_existing, best_catboost_summary),
+  here("reports", "best_hyperparameters_by_model.csv")
+)
 
 message("Tuning termine : resultats sauvegardes dans reports/ et, si applicable, models/best_tuned_model.rds.")

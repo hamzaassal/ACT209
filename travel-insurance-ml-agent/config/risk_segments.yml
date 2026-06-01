@@ -30,9 +30,17 @@ moderate:
   lift: 3.52
   recommendation: "Surveillance ou contrôle léger possible."
 
+moderate_low:
+  label: "Modéré faible"
+  condition: "Top 30 %"
+  min_score: 0.01378334
+  claim_rate: 0.0440
+  lift: 2.62
+  recommendation: "Traitement standard avec vigilance proportionnée au score."
+
 standard:
   label: "Standard"
-  condition: "Hors top 20 %"
+  condition: "Hors top 30 %"
   min_score: 0
   claim_rate: 0.0168
   lift: 1.00

@@ -1,7 +1,7 @@
 config_id,model,strategy,.metric,.estimator,.estimate
-xgboost__none,xgboost,none,accuracy,binary,0.9503481957131229
-xgboost__none,xgboost,none,precision,binary,0.11464968152866242
-xgboost__none,xgboost,none,recall,binary,0.2903225806451613
-xgboost__none,xgboost,none,f_meas,binary,0.1643835616438356
-xgboost__none,xgboost,none,roc_auc,binary,0.8302608894335625
-xgboost__none,xgboost,none,pr_auc,binary,0.10150588515700701
+xgboost__smote,xgboost,smote,accuracy,binary,0.9153477435108981
+xgboost__smote,xgboost,smote,precision,binary,0.08517699115044247
+xgboost__smote,xgboost,smote,recall,binary,0.41397849462365593
+xgboost__smote,xgboost,smote,f_meas,binary,0.14128440366972478
+xgboost__smote,xgboost,smote,roc_auc,binary,0.821797511975731
+xgboost__smote,xgboost,smote,pr_auc,binary,0.08451354663124079

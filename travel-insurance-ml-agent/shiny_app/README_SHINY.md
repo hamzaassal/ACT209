@@ -1,20 +1,15 @@
-# Application Shiny - Travel Insurance Risk Scoring
+# Application Shiny - Risk Scoring & Agent IA
 
 ## Objectif
 
-Cette application est un prototype professionnel d'aide à la décision pour un souscripteur assurance voyage. Elle utilise le modèle champion XGBoost sans SMOTE pour produire un score de risque de sinistre (`claim_status = yes`).
+Cette application est un prototype professionnel d'aide a l'underwriting en assurance voyage. Elle estime un score de risque de sinistre, positionne le dossier dans un segment de risque et propose une explication metier via un agent IA.
 
-Le score doit être interprété comme un outil de priorisation et d'analyse, pas comme une décision automatique.
+L'application charge en priorite le modele applicatif sans variables tarifaires :
 
-## Prérequis
+- `models/no_tariff_best_model.rds`
+- `models/no_tariff_model_metadata.rds`
 
-- R récent installé.
-- Les packages R nécessaires : `shiny`, `bslib`, `yaml`, `dplyr`, `tidymodels`, `httr`, `jsonlite`.
-- Les fichiers suivants doivent exister :
-  - `models/best_model.rds`
-  - `models/model_metadata.rds`
-  - `config/risk_segments.yml`
-  - `config/app_config.yml`
+Ce choix evite de fonder la recommandation sur une prime ou une commission deja calculee. Si ces fichiers sont absents, l'application utilise le modele complet historique comme fallback.
 
 ## Lancement
 
@@ -24,52 +19,52 @@ Depuis la racine du projet :
 shiny::runApp("shiny_app")
 ```
 
-## Fonctionnement
+## Pages
 
-1. Ouvrir l'onglet **Saisie dossier**.
-2. Renseigner les caractéristiques du dossier.
-3. Cliquer sur **Calculer le score de risque**.
-4. Lire le score, le segment, le lift et la recommandation.
-5. Interroger l'agent IA dans l'onglet **Agent IA** si une explication métier est souhaitée.
+- **Accueil** : contexte, positionnement metier et parcours d'utilisation.
+- **Scoring d'un dossier** : saisie des caracteristiques disponibles avant tarification.
+- **Analyse du risque** : score, segment, lift, taux du segment et recommandation underwriting.
+- **Agent IA explicatif** : questions libres ou predefinies sur le dossier score.
+- **Methodologie & limites** : cible, approche scoring/ranking, desequilibre de classes et limites.
+- **Guide utilisateur** : lecture des indicateurs, couleurs et bonnes pratiques.
 
-## Lecture du score
+## Fichiers necessaires
 
-Le score correspond à une probabilité estimée de sinistre. Les segments de risque sont dérivés de l'analyse de lift sur le test set :
-
-- Top 1 % : segment très élevé.
-- Top 5 % : segment élevé.
-- Top 10 % : segment modéré à élevé.
-- Top 20 % : segment modéré.
-- Hors Top 20 % : segment standard.
+- `models/no_tariff_best_model.rds`
+- `models/no_tariff_model_metadata.rds`
+- `config/risk_segments.yml`
+- `config/app_config.yml`
+- `shiny_app/www/custom.css`
+- `shiny_app/www/logo-cnam.png` si le logo est disponible
 
 ## Agent IA
 
-L'agent IA explique le score et propose une recommandation underwriting. Il fonctionne en deux modes :
+L'agent recoit automatiquement le dossier, le score, le seuil, le segment, le lift, la recommandation et les limites du modele. Il ne prend jamais de decision automatique.
 
-- **Mode LLM** si la variable d'environnement `OPENAI_API_KEY` est définie.
-- **Mode fallback local** si aucune clé n'est disponible.
+Sans cle API, l'application fonctionne en mode local :
 
-Pour activer le mode LLM :
+```text
+Mode local : reponse generee sans appel externe a un LLM.
+```
+
+Pour activer un LLM externe :
 
 ```r
 Sys.setenv(OPENAI_API_KEY = "votre-cle-api")
-```
-
-Optionnellement :
-
-```r
 Sys.setenv(OPENAI_MODEL = "gpt-4o-mini")
 ```
 
-## Limites connues
+## Test
 
-- Le modèle ne prédit pas une certitude de sinistre.
-- Les segments utilisent des seuils de score issus du test set, documentés dans `config/risk_segments.yml`.
-- L'application ne remplace pas les règles internes de souscription.
-- L'interprétation fine par facteurs explicatifs sera renforcée lorsque des valeurs SHAP seront disponibles.
+```r
+source("scripts/08_test_shiny_agent_components.R")
+```
 
-## Erreurs fréquentes
+Le script teste le chargement du modele, le logo, le CSS, la prediction, la segmentation, la recommandation, les contributions locales et le fallback agent.
 
-- `models/best_model.rds introuvable` : relancer le pipeline ML ou vérifier le dossier `models/`.
-- Package manquant : installer le package indiqué par le message d'erreur.
-- Réponse agent fallback : aucune clé API LLM n'est configurée, ce qui est normal en mode local.
+## Limites
+
+- Le score est probabiliste.
+- Le modele sert a prioriser l'analyse, pas a automatiser une decision.
+- Les seuils doivent etre recalibres si le modele change.
+- Toute utilisation operationnelle necessite une validation metier et un suivi du drift.

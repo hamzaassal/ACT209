@@ -25,7 +25,21 @@ explain_prediction <- function(prediction_result, client_data) {
     "Cette sortie doit être utilisée comme un score de priorisation, pas comme une décision automatique."
   )
 
-  if (!is.null(prediction_result$important_features)) {
+  if (!is.null(prediction_result$shap_top_features) && nrow(prediction_result$shap_top_features) > 0) {
+    shap_lines <- paste0(
+      prediction_result$shap_top_features$feature_group,
+      " (",
+      prediction_result$shap_top_features$direction,
+      ")",
+      collapse = ", "
+    )
+    explanation <- paste0(
+      explanation,
+      "\n\nPrincipales contributions SHAP locales pour ce dossier : ",
+      shap_lines,
+      ". Ces contributions indiquent les groupes de variables qui influencent le plus le score du dossier, à la hausse ou à la baisse."
+    )
+  } else if (!is.null(prediction_result$important_features)) {
     explanation <- paste0(
       explanation,
       "\n\nVariables importantes disponibles : ",
@@ -34,8 +48,8 @@ explain_prediction <- function(prediction_result, client_data) {
   } else {
     explanation <- paste0(
       explanation,
-      "\n\nL'interprétation fine variable par variable pourra être enrichie ultérieurement avec des valeurs SHAP. ",
-      "Aucune explication SHAP locale n'est actuellement disponible dans les métadonnées du modèle."
+      "\n\nLes contributions SHAP locales ne sont pas disponibles pour ce dossier. ",
+      "L'interprétation reste donc limitée à la lecture du score, du segment et du lift."
     )
   }
 
