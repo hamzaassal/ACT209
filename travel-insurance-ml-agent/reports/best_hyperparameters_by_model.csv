@@ -1,0 +1,8 @@
+model,strategy,selected_hyperparameters,selection_metric,selected_metric_value,comments
+xgboost,xgboost_none,config_id=xgboost_none_2; trees=150; tree_depth=3; learn_rate=0.03; min_n=15; mtry=16; scale_pos_weight=1; smote_over_ratio=NA,cv_roc_auc,0.8109176541029361,Meilleur par famille dans le tuning XGBoost/Random Forest.
+xgboost,xgboost_weighted,config_id=xgboost_weighted_6; trees=200; tree_depth=4; learn_rate=0.05; min_n=10; mtry=16; scale_pos_weight=25; smote_over_ratio=NA,cv_roc_auc,0.8108512410758473,Meilleur par famille dans le tuning XGBoost/Random Forest.
+xgboost,xgboost_smote_light,config_id=xgboost_smote_light_1; trees=100; tree_depth=3; learn_rate=0.05; min_n=10; mtry=8; scale_pos_weight=1; smote_over_ratio=0.111,cv_roc_auc,0.8099678664807227,Meilleur par famille dans le tuning XGBoost/Random Forest.
+random_forest,random_forest,config_id=random_forest_3; trees=200; tree_depth=NA; learn_rate=NA; min_n=20; mtry=21; scale_pos_weight=NA; smote_over_ratio=NA,cv_roc_auc,0.7697190381716928,Meilleur par famille dans le tuning XGBoost/Random Forest.
+catboost,none,iterations=100; depth=4; learning_rate=0.05; l2_leaf_reg=3; border_count=128; class_weight_yes=1,cv_roc_auc,0.7910357741919539,Meilleur CatBoost par stratégie selon validation croisée stratifiée.
+catboost,smote,iterations=100; depth=4; learning_rate=0.05; l2_leaf_reg=3; border_count=128; class_weight_yes=1,cv_roc_auc,0.8133388985135119,Meilleur CatBoost par stratégie selon validation croisée stratifiée.
+catboost,weighted,iterations=100; depth=4; learning_rate=0.05; l2_leaf_reg=3; border_count=128; class_weight_yes=59.1728,cv_roc_auc,0.8125832196209671,Meilleur CatBoost par stratégie selon validation croisée stratifiée.

@@ -49,10 +49,13 @@ source("scripts/05_model_evaluation.R")
 source("scripts/06_save_model.R")
 source("scripts/07_bootstrap_validation.R")
 source("scripts/08_threshold_analysis.R")
+source("scripts/10_catboost_training.R")
 source("scripts/09_hyperparameter_tuning.R")
 source("scripts/09_smote_training_audit.R")
 source("scripts/10_risk_ranking_lift_analysis.R")
 source("scripts/11_smote_intensity_analysis.R")
+source("scripts/12_final_audit.R")
+source("scripts/no_tariff/01_no_tariff_benchmark.R")
 ```
 
 ## Pipeline
@@ -65,10 +68,13 @@ source("scripts/11_smote_intensity_analysis.R")
 - `06_save_model.R` : sauvegarde `models/best_model.rds` et `models/model_metadata.rds`.
 - `07_bootstrap_validation.R` : mesure la stabilité du modèle champion par bootstrap.
 - `08_threshold_analysis.R` : analyse le compromis precision/recall selon les seuils du modèle champion.
+- `10_catboost_training.R` : installe/charge CatBoost si disponible, entraîne CatBoost `none`, `smote`, `weighted`, calcule les métriques et le lift.
 - `09_hyperparameter_tuning.R` : teste un tuning raisonnable de XGBoost, XGBoost pondéré, XGBoost avec SMOTE léger et Random Forest.
 - `09_smote_training_audit.R` : vérifie que SMOTE est appliqué uniquement au train/folds.
 - `10_risk_ranking_lift_analysis.R` : analyse le pouvoir de scoring et le lift du champion XGBoost sans SMOTE.
 - `11_smote_intensity_analysis.R` : compare `none`, `smote_10` et `smote_20` pour tester l'intensité du rééquilibrage.
+- `12_final_audit.R` : normalise les sorties d'audit, vérifie CatBoost et produit `reports/final_model_selection_summary.csv`.
+- `scripts/no_tariff/01_no_tariff_benchmark.R` : relance un benchmark complémentaire sans variables tarifaires déjà calculées, afin de tester une approche plus prudente pour l'aide à l'underwriting.
 
 ## Modèles comparés
 
@@ -83,9 +89,16 @@ Modèles entraînés :
 - régression logistique ;
 - arbre de décision ;
 - random forest ;
-- XGBoost.
+- XGBoost ;
+- CatBoost via un script dédié.
 
-CatBoost est conservé dans la structure du benchmark. Dans l'environnement R utilisé, le package `catboost` n'est pas disponible via CRAN ; les configurations CatBoost sont donc tracées comme `skipped` dans `reports/model_comparison.csv`.
+CatBoost est installé localement depuis la release officielle si le package n'est pas disponible via CRAN. Les résultats sont sauvegardés dans `reports/catboost_test_metrics.csv`, `reports/catboost_lift_analysis.csv` et `reports/xgboost_vs_catboost_comparison.csv`.
+
+Une approche complémentaire sans variables tarifaires est ajoutée dans `scripts/no_tariff/`. Elle retire notamment `net_sales` lorsque cette variable est présente, puis compare les mêmes familles de modèles sur le test set inchangé. Cette analyse permet de discuter le risque de circularité entre une prime déjà calculée et une recommandation underwriting.
+
+Les scripts ne réalisent aucun commit ni aucun push Git. La publication sur GitHub reste une action manuelle de l'utilisateur.
+
+Aucun script ne réalise de commit ou de push Git. La publication sur GitHub reste une action manuelle de l’utilisateur.
 
 ## Métriques
 
@@ -126,6 +139,13 @@ Principaux artefacts :
 - `reports/tuned_model_test_metrics.csv`
 - `reports/tuned_model_lift_analysis.csv`
 - `reports/champion_vs_tuned_comparison.csv`
+- `reports/catboost_test_metrics.csv`
+- `reports/catboost_lift_analysis.csv`
+- `reports/catboost_hyperparameter_results.csv`
+- `reports/xgboost_vs_catboost_comparison.csv`
+- `reports/hyperparameters_grid_summary.csv`
+- `reports/best_hyperparameters_by_model.csv`
+- `reports/final_model_selection_summary.csv`
 - `reports/final_metrics.csv`
 - `reports/bootstrap_results.csv`
 - `reports/bootstrap_summary.csv`

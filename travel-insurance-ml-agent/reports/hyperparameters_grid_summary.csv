@@ -1,0 +1,22 @@
+model,hyperparameter,tested_values,description
+logistic_regression,penalty,non testé,Régression logistique baseline sans pénalisation dans le pipeline principal.
+decision_tree,cost_complexity,0.01,Contrôle l'élagage de l'arbre de décision baseline.
+decision_tree,tree_depth,6,Profondeur maximale fixée pour limiter la variance.
+decision_tree,min_n,20,Nombre minimal d'observations par noeud.
+random_forest,trees,"100, 150, 200",Nombre d'arbres testés dans le tuning Random Forest.
+random_forest,mtry,valeurs dérivées du nombre de prédicteurs,Nombre de variables candidates par split.
+random_forest,min_n,"10, 15, 20, 30",Taille minimale des noeuds.
+xgboost,trees,"100, 150, 200",Nombre d'arbres de boosting.
+xgboost,tree_depth,"2, 3, 4, 5",Profondeur des arbres XGBoost.
+xgboost,learn_rate,"0.02, 0.03, 0.05, 0.08",Vitesse d'apprentissage.
+xgboost,loss_reduction,"0, 1",Gain minimal pour partitionner un noeud.
+xgboost,min_n,"10, 15, 20",Nombre minimal d'observations par feuille.
+xgboost,sample_size,"0.7, 0.8, 0.9",Sous-échantillonnage des lignes.
+xgboost,mtry,valeurs dérivées du nombre de prédicteurs,Sous-échantillonnage des colonnes.
+xgboost,scale_pos_weight,"1, 10, 25, 50, ratio no/yes",Pondération de la classe positive rare.
+catboost,iterations,"300, 500, 800",Nombre d'itérations de boosting.
+catboost,depth,"4, 6, 8",Profondeur des arbres CatBoost.
+catboost,learning_rate,"0.01, 0.03, 0.05, 0.1",Vitesse d'apprentissage.
+catboost,l2_leaf_reg,"1, 3, 5, 10",Régularisation L2 des feuilles.
+catboost,border_count,"128, 254",Nombre de seuils pour discrétiser les variables numériques.
+catboost,class_weight_yes,"1, 10, 25, 50, ratio no/yes",Poids de la classe sinistre dans la fonction de perte.

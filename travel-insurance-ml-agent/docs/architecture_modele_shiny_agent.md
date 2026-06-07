@@ -1,14 +1,14 @@
-# Architecture modèle - Shiny - agent IA
+﻿# Architecture modÃ¨le - Shiny - agent IA
 
-## Schéma textuel
+## SchÃ©ma textuel
 
 ```text
-Utilisateur métier
+Utilisateur mÃ©tier
   -> Application Shiny
   -> Module de saisie dossier
   -> Fonction predict_claim_risk()
-  -> Modèle XGBoost champion
-  -> Probabilité de sinistre
+  -> ModÃ¨le XGBoost champion
+  -> ProbabilitÃ© de sinistre
   -> Segmentation du risque
   -> Affichage score / lift / recommandation
   -> Construction contexte agent
@@ -16,41 +16,41 @@ Utilisateur métier
   -> Explication underwriting
 ```
 
-## Rôle de chaque composant
+## RÃ´le de chaque composant
 
-### Modèle ML
+### ModÃ¨le ML
 
-Le modèle `models/best_model.rds` estime la probabilité de sinistre. Il ne prend pas de décision contractuelle.
+Le modÃ¨le `models/best_model.rds` estime la probabilitÃ© de sinistre. Il ne prend pas de dÃ©cision contractuelle.
 
 ### Application Shiny
 
-Shiny fournit une interface métier pour saisir un dossier, afficher le score, le segment et la recommandation.
+Shiny fournit une interface mÃ©tier pour saisir un dossier, afficher le score, le segment et la recommandation.
 
 ### Configuration
 
-Les fichiers `config/risk_segments.yml` et `config/app_config.yml` centralisent les seuils, les taux historiques, le lift et les paramètres applicatifs.
+Les fichiers `config/risk_segments.yml` et `config/app_config.yml` centralisent les seuils, les taux historiques, le lift et les paramÃ¨tres applicatifs.
 
 ### Agent IA
 
-L'agent explique le score et contextualise le résultat pour un souscripteur. Il peut utiliser un LLM externe ou fonctionner en mode fallback local.
+L'agent explique le score et contextualise le rÃ©sultat pour un souscripteur. Il peut utiliser un LLM externe ou fonctionner en mode fallback local.
 
-## Flux de données
+## Flux de donnÃ©es
 
-Les données saisies dans l'application sont transformées en `data.frame` d'une ligne. Cette ligne est envoyée au workflow tidymodels sauvegardé. La probabilité `.pred_yes` est récupérée, comparée au seuil opérationnel et utilisée pour attribuer un segment de risque.
+Les donnÃ©es saisies dans l'application sont transformÃ©es en `data.frame` d'une ligne. Cette ligne est envoyÃ©e au workflow tidymodels sauvegardÃ©. La probabilitÃ© `.pred_yes` est rÃ©cupÃ©rÃ©e, comparÃ©e au seuil opÃ©rationnel et utilisÃ©e pour attribuer un segment de risque.
 
-Le contexte agent est ensuite construit à partir des mêmes données et du résultat de scoring.
+Le contexte agent est ensuite construit Ã  partir des mÃªmes donnÃ©es et du rÃ©sultat de scoring.
 
-## Séparation des responsabilités
+## SÃ©paration des responsabilitÃ©s
 
-- `shiny_app/modules/mod_input_client.R` : collecte des données.
-- `shiny_app/global.R` : chargement du modèle, configuration et fonction de scoring.
-- `shiny_app/modules/mod_score_output.R` : restitution synthétique.
-- `shiny_app/modules/mod_risk_explanation.R` : analyse métier déterministe.
-- `shiny_app/modules/mod_agent_chat.R` : interface conversationnelle.
+- `shiny_app/modules/mod_input_client.R` : collecte des donnÃ©es.
+- `shiny_app/global.R` : chargement du modÃ¨le, configuration et fonction de scoring.
+- `shiny_app/modules/mod_score_output.R` : restitution synthÃ©tique.
+- `shiny_app/modules/mod_agent_chat.R` : interface conversationnelle, contexte de scoring et explication locale.
 - `agent/*.R` : logique explicative et appel LLM.
 
 ## Limites
 
-- Les seuils de segment sont issus d'une analyse sur le test set et doivent être recalibrés en production.
-- Les explications locales détaillées nécessitent l'ajout futur de SHAP values.
+- Les seuils de segment sont issus d'une analyse sur le test set et doivent Ãªtre recalibrÃ©s en production.
+- Les explications locales SHAP sont utilisÃ©es lorsque le workflow XGBoost les expose correctement ; sinon l'agent affiche un message de fallback.
 - L'agent ne remplace pas la validation underwriting humaine.
+

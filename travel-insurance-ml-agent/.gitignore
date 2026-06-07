@@ -6,6 +6,12 @@ data/raw/*
 data/*.csv
 data/processed/*
 models/*.rds
+models/*.cbm
+models/**/*.rds
+models/**/*.cbm
 shiny_app/*.log
 .env
+.Renviron
 .DS_Store
+Rplots.pdf
+catboost_info/

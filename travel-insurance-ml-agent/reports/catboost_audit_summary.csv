@@ -1,0 +1,8 @@
+item,path,exists,catboost_package_available,catboost_version
+10_catboost_training.R,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/scripts/10_catboost_training.R,TRUE,TRUE,1.2.10
+catboost_test_metrics.csv,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/reports/catboost_test_metrics.csv,TRUE,TRUE,1.2.10
+catboost_lift_analysis.csv,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/reports/catboost_lift_analysis.csv,TRUE,TRUE,1.2.10
+catboost_hyperparameter_results.csv,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/reports/catboost_hyperparameter_results.csv,TRUE,TRUE,1.2.10
+xgboost_vs_catboost_comparison.csv,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/reports/xgboost_vs_catboost_comparison.csv,TRUE,TRUE,1.2.10
+catboost_model.cbm,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/models/catboost_model.cbm,TRUE,TRUE,1.2.10
+catboost_metadata.rds,C:/Users/assal/OneDrive/Documents/New project/travel-insurance-ml-agent/models/catboost_metadata.rds,TRUE,TRUE,1.2.10

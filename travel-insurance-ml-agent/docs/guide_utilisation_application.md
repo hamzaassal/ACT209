@@ -1,103 +1,65 @@
-# Guide d'utilisation de l'application
+# Guide utilisateur de l'application
 
-## 1. Objectif de l'application
+## 1. Objectif
 
-L'application estime un score de risque de sinistre pour un dossier d'assurance voyage. Elle aide le souscripteur à prioriser les dossiers les plus sensibles, sans produire de décision automatique.
+L'application aide un underwriter a analyser un dossier d'assurance voyage. Elle fournit un score de risque de sinistre, un segment de risque, un lift et une recommandation metier.
+
+Elle ne remplace pas l'expertise humaine et ne produit pas de decision contractuelle automatique.
 
 ## 2. Public cible
 
-Le prototype est destiné à un underwriter, un chargé d'affaires assurance, un analyste portefeuille ou un responsable actuariat souhaitant comprendre le risque relatif d'un dossier.
+Le prototype s'adresse a un souscripteur, un charge d'affaires assurance, un actuaire ou un analyste portefeuille.
 
-## 3. Lancement de l'application
+## 3. Lancer l'application
 
-Depuis la racine du projet R :
+Depuis la racine du projet :
 
 ```r
 shiny::runApp("shiny_app")
 ```
 
-## 4. Saisie d'un dossier
+## 4. Utiliser l'application
 
-L'onglet **Saisie dossier** permet de renseigner les variables attendues par le modèle :
+1. Ouvrir **Scoring d'un dossier**.
+2. Renseigner les caracteristiques disponibles avant tarification.
+3. Cliquer sur **Calculer le score de risque**.
+4. Ouvrir **Analyse du risque** pour lire le score, le segment, le lift et la recommandation.
+5. Ouvrir **Agent IA explicatif** pour obtenir une synthese metier.
 
-- agence ;
-- type d'agence ;
-- canal de distribution ;
-- produit ;
-- durée ;
-- destination ;
-- ventes nettes ;
-- commission ;
-- genre ;
-- âge.
+## 5. Lire les indicateurs
 
-Les valeurs par défaut servent à tester l'application et ne constituent pas une recommandation métier.
+- **Score de risque estime** : probabilite estimee de sinistre.
+- **Segment de risque** : position du dossier parmi les scores les plus eleves.
+- **Lift** : niveau de concentration du risque par rapport au taux moyen.
+- **Recommandation underwriting** : conseil d'analyse, jamais decision automatique.
 
-## 5. Lecture du score de risque
+## 6. Couleurs
 
-Le score affiché correspond à une probabilité estimée de sinistre. Il doit être lu comme un indicateur de risque relatif, pas comme une certitude.
+- Vert : aucune alerte particuliere selon le modele.
+- Bleu ou jaune : revue standard ou vigilance metier.
+- Orange : analyse complementaire conseillee.
+- Rouge : analyse underwriting prioritaire.
 
-Exemple : un score de 8 % ne signifie pas que le sinistre aura lieu. Il signifie que le dossier présente un niveau de risque supérieur à la fréquence moyenne observée dans le portefeuille test, qui est d'environ 1,68 %.
+## 7. Exemple
 
-## 6. Comprendre le segment de risque
+Si un dossier est classe dans le Top 10 %, cela signifie qu'il appartient aux 10 % de dossiers ayant les scores de risque les plus eleves. Dans l'echantillon de test du modele complet, ce segment concentrait 53,76 % des sinistres observes.
 
-Les segments sont issus de l'analyse de concentration du risque :
+## 8. Agent IA
 
-- Top 1 % : dossiers les plus risqués.
-- Top 5 % : segment de ciblage prioritaire.
-- Top 10 % : segment important pour la surveillance.
-- Top 20 % : segment large de priorisation.
-- Standard : dossier hors zones de score élevé.
+L'agent peut repondre a des questions comme :
 
-## 7. Comprendre le lift
+- Pourquoi ce dossier est-il considere risque ?
+- Quelle recommandation underwriting proposer ?
+- Que signifie le lift affiche ?
+- Quelles sont les limites du modele ?
+- Comment interpreter ce score face au taux moyen du portefeuille ?
 
-Le lift mesure combien le taux de sinistre du segment est supérieur au taux moyen du test set.
+Sans cle API, l'agent fonctionne en mode local et genere une reponse deterministe.
 
-Formule :
+## 9. Bonnes pratiques
 
-```text
-Lift = taux de sinistre du segment / taux moyen de sinistre du test set
-```
-
-Un lift de 5 signifie que le segment est environ cinq fois plus sinistré que la moyenne.
-
-## 8. Utiliser l'agent IA
-
-L'onglet **Agent IA** permet de poser une question en langage naturel, par exemple :
-
-- Pourquoi ce dossier est-il risqué ?
-- Quelle recommandation underwriting ?
-- Que signifie le lift ?
-- Quelles sont les limites du modèle ?
-
-L'agent reçoit automatiquement le score, le segment, le lift, la recommandation et les caractéristiques du dossier.
-
-## 9. Exemples d'interprétation
-
-### Dossier à faible risque
-
-Un dossier avec un score inférieur aux seuils Top 20 % sera classé **Standard**. La recommandation sera généralement de ne pas déclencher d'alerte particulière selon le score, tout en appliquant les règles internes habituelles.
-
-### Dossier à risque élevé
-
-Un dossier dans le Top 5 % présente un taux de sinistre historique de 11,03 % dans le segment, contre 1,68 % en moyenne. L'application recommande une analyse complémentaire avant décision.
-
-### Question posée à l'agent
-
-Question : "Pourquoi ce dossier mérite-t-il une revue ?"
-
-Réponse attendue : l'agent explique le score, le compare au taux moyen, décrit le segment de risque et rappelle qu'il s'agit d'une aide à l'analyse.
-
-## 10. Limites et précautions
-
-- Le score ne prouve pas qu'un sinistre aura lieu.
-- Le modèle peut générer des faux positifs.
-- Les résultats dépendent de la qualité des données historiques.
-- Les règles contractuelles, juridiques et commerciales restent prioritaires.
-
-## 11. Bonnes pratiques underwriting
-
-- Utiliser le score pour prioriser les dossiers, pas pour automatiser une décision.
-- Comparer le score aux informations qualitatives disponibles.
-- Documenter les décisions sensibles.
-- Réviser régulièrement les seuils si le portefeuille évolue.
+- Utiliser le score pour prioriser, pas pour decider automatiquement.
+- Croiser le score avec les regles internes de souscription.
+- Documenter toute decision sensible.
+- Recalibrer les seuils si le portefeuille evolue.
+- Ne jamais presenter le score comme une certitude individuelle.

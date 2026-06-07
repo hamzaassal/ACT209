@@ -5,7 +5,8 @@ app:
   champion_model: "XGBoost sans SMOTE"
   default_threshold: 0.05
   fallback_threshold: 0.08
-  score_threshold_source: "Seuils approximés à partir des percentiles observés sur le test set XGBoost sans SMOTE."
+  score_threshold_source: "Seuils de segments dérivés des percentiles observés sur le test set XGBoost sans SMOTE ; à recalculer si le modèle change."
+  university_logo: "logo-cnam.png"
 
 llm:
   provider: "openai_compatible"
