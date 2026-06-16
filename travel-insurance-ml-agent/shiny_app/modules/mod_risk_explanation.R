@@ -1,5 +1,5 @@
 # modules/mod_risk_explanation.R
-# Module d'analyse métier, priorisation et SHAP.
+# Module d'analyse metier, priorisation et SHAP.
 
 mod_risk_explanation_ui <- function(id) {
   ns <- NS(id)
@@ -29,20 +29,21 @@ mod_risk_explanation_server <- function(id, client_data, prediction_result, pred
       if (is.null(result)) {
         return(empty_state(
           "Analyse en attente",
-          "Calculez un score dans l'onglet Saisie dossier pour obtenir l'interprétation métier."
+          "Calculez un score dans l'onglet Saisie dossier pour obtenir l'interpretation metier."
         ))
       }
 
-      alert_class <- if (result$segment_condition %in% c("Top 1 %", "Top 5 %", "Top 10 %")) "alert-box" else "info-box"
-      alert_text <- if (result$segment_condition %in% c("Top 1 %", "Top 5 %", "Top 10 %")) {
-        paste("Signal prioritaire :", result$segment_condition, "des scores les plus élevés. Une revue underwriting est recommandée.")
+      is_priority <- result$segment_condition %in% c("Top 1 %", "Top 5 %", "Top 10 %")
+      alert_class <- if (is_priority) "alert-box" else "info-box"
+      alert_text <- if (is_priority) {
+        paste("Signal prioritaire :", result$segment_condition, "des scores les plus eleves. Une revue underwriting est recommandee.")
       } else {
-        paste("Segment", result$segment_condition, ": le dossier reste à interpréter selon les règles internes.")
+        paste("Segment", result$segment_condition, ": le dossier reste a interpreter selon les regles internes.")
       }
 
       card(
         class = "content-card",
-        card_header("Interprétation du dossier"),
+        card_header("Interpretation du dossier"),
         div(class = alert_class, alert_text),
         div(
           class = "analysis-grid",
@@ -59,7 +60,7 @@ mod_risk_explanation_server <- function(id, client_data, prediction_result, pred
     output$local_shap <- renderUI({
       result <- prediction_result()
       if (is.null(result)) {
-        return(p("Les contributions SHAP seront affichées après calcul du score."))
+        return(p("Les contributions SHAP seront affichees apres calcul du score."))
       }
       shap <- result$shap_top_features
       if (is.null(shap) || nrow(shap) == 0) {
@@ -67,7 +68,7 @@ mod_risk_explanation_server <- function(id, client_data, prediction_result, pred
       }
 
       tagList(
-        p("Les contributions SHAP indiquent les groupes de variables qui pèsent le plus dans le score du dossier. Une contribution positive augmente le score de risque, une contribution négative le diminue."),
+        p("Les contributions SHAP indiquent les groupes de variables qui pesent le plus dans le score du dossier. Une contribution positive augmente le score de risque, une contribution negative le diminue."),
         tableOutput(session$ns("local_shap_table"))
       )
     })
@@ -90,7 +91,7 @@ mod_risk_explanation_server <- function(id, client_data, prediction_result, pred
       }
 
       tagList(
-        p("Les segments de score les plus élevés concentrent une part importante des sinistres observés. C'est la justification métier de l'approche scoring/ranking."),
+        p("Les segments de score les plus eleves concentrent une part importante des sinistres observes. C'est la justification metier de l'approche scoring/ranking."),
         tableOutput(session$ns("lift_table_rendered"))
       )
     })
@@ -99,6 +100,5 @@ mod_risk_explanation_server <- function(id, client_data, prediction_result, pred
       req(lift_table)
       lift_table
     }, striped = TRUE, bordered = FALSE, digits = 4)
-
   })
 }

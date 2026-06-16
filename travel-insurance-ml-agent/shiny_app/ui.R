@@ -124,7 +124,7 @@ app_ui <- page_navbar(
             roadmap_row("01", "Caracteristiques du dossier", "Controle des champs et preparation modele", "Dossier pret au scoring", "Contexte client disponible"),
             roadmap_row("02", "Dossier valide", "Prediction XGBoost sans prime ni commission", "Probabilite de sinistre", "Traduction du score en langage metier"),
             roadmap_row("03", "Score calcule", "Segmentation risque et lift", "Niveau d'attention recommande", "Explication des facteurs et limites"),
-            roadmap_row("04", "Question underwriter", "Contexte + prompt agent", "Reponse structuree", "Recommandation assistée, non automatique")
+            roadmap_row("04", "Question underwriter", "Contexte + prompt agent", "Reponse structuree", "Recommandation assistee, non automatique")
           )
         )
       ),
@@ -190,7 +190,8 @@ app_ui <- page_navbar(
         card(
           class = "content-card",
           card_header("Limites a rappeler"),
-          div(class = "limit-list",
+          div(
+            class = "limit-list",
             p("Le modele n'a pas vocation a predire avec certitude la survenance d'un sinistre."),
             p("L'accuracy est insuffisante dans un contexte de sinistres rares."),
             p("Les faux positifs et faux negatifs doivent etre interpretes selon les couts metier."),

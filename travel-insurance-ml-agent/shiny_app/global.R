@@ -1,7 +1,7 @@
 # global.R
 # Chargement global de l'application Shiny underwriting.
 
-required_packages <- c("shiny", "bslib", "yaml", "dplyr", "tidymodels")
+required_packages <- c("shiny", "bslib", "yaml", "dplyr", "tidymodels", "DT", "plotly", "purrr", "tibble")
 missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing_packages) > 0) {
   stop(
@@ -21,7 +21,7 @@ library(tidymodels)
 }
 
 find_project_root <- function() {
-  candidates <- unique(normalizePath(c(".", ".."), winslash = "/", mustWork = FALSE))
+  candidates <- unique(normalizePath(c(".", "..", "travel-insurance-ml-agent"), winslash = "/", mustWork = FALSE))
   for (candidate in candidates) {
     if (
       file.exists(file.path(candidate, "models", "no_tariff_best_model.rds")) ||
@@ -78,6 +78,10 @@ source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_input_client.R"), lo
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_score_output.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_risk_analysis.R"), local = TRUE)
 source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_agent_chat.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_client_scoring.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_stat_exploration.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_ml_summary.R"), local = TRUE)
+source(file.path(PROJECT_ROOT, "shiny_app", "modules", "mod_pricing_simulation.R"), local = TRUE)
 
 app_model_path <- file.path(PROJECT_ROOT, "models", "no_tariff_best_model.rds")
 app_metadata_path <- file.path(PROJECT_ROOT, "models", "no_tariff_model_metadata.rds")
@@ -89,9 +93,28 @@ if (!file.exists(app_model_path)) {
   app_model_source <- "Modèle complet historique"
 }
 
+safe_read_csv <- function(path) {
+  if (!file.exists(path)) {
+    return(NULL)
+  }
+  read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+}
+
+round_numeric <- function(data, digits = 4) {
+  data %>%
+    mutate(across(where(is.numeric), ~ round(.x, digits)))
+}
+
+data_clean <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "data_clean.rds"))
 best_model <- safe_read_rds(app_model_path)
 model_metadata <- safe_read_rds(app_metadata_path)
 train_data <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "train_data.rds"))
+test_data <- safe_read_rds(file.path(PROJECT_ROOT, "data", "processed", "test_data.rds"))
+model_comparison <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "model_comparison.csv"))
+model_ranking <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "model_ranking.csv"))
+final_metrics <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "final_metrics.csv"))
+confusion_matrix <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "confusion_matrix.csv"))
+class_balance_summary <- safe_read_csv(file.path(PROJECT_ROOT, "reports", "class_balance_summary.csv"))
 risk_segments <- yaml::read_yaml(file.path(PROJECT_ROOT, "config", "risk_segments.yml"))
 app_config <- yaml::read_yaml(file.path(PROJECT_ROOT, "config", "app_config.yml"))
 lift_table <- safe_read_csv_base(file.path(PROJECT_ROOT, "reports", "risk_ranking_lift_table.csv"))

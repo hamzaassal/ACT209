@@ -485,8 +485,16 @@ write_csv(tuned_model_lift_analysis, here("reports", "tuned_model_lift_analysis.
 
 champion_metadata <- if (file.exists(metadata_path)) readRDS(metadata_path) else NULL
 champion_threshold <- 0.08
+champion_config_id <- "current_champion"
+champion_model_name <- "champion"
+champion_model_variant <- "current_champion"
 if (!is.null(champion_metadata) && !is.null(champion_metadata$decision_threshold$threshold)) {
   champion_threshold <- as.numeric(champion_metadata$decision_threshold$threshold)
+}
+if (!is.null(champion_metadata) && !is.null(champion_metadata$champion$config_id)) {
+  champion_config_id <- champion_metadata$champion$config_id
+  champion_model_name <- champion_metadata$champion$model
+  champion_model_variant <- paste(champion_metadata$champion$model, champion_metadata$champion$strategy, sep = "_")
 }
 
 champion_comparison <- NULL
@@ -496,13 +504,13 @@ if (file.exists(champion_path)) {
   champion_metrics <- evaluate_probabilities(champion_prob, test_data$claim_status, champion_threshold) %>%
     mutate(
       comparison_role = "current_champion",
-      config_id = "xgboost__none_current",
-      model = "xgboost",
-      model_variant = "xgboost_none_current",
+      config_id = champion_config_id,
+      model = champion_model_name,
+      model_variant = champion_model_variant,
       .before = 1
     )
 
-  champion_lift <- compute_lift_table(champion_prob, "xgboost", "xgboost_none_current")
+  champion_lift <- compute_lift_table(champion_prob, champion_model_name, champion_model_variant)
   champion_top10 <- champion_lift %>% filter(segment == "top_10_percent")
   champion_top20 <- champion_lift %>% filter(segment == "top_20_percent")
 

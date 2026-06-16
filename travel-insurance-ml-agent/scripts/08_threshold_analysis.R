@@ -36,6 +36,11 @@ best_model <- readRDS(model_path)
 metadata <- if (file.exists(metadata_path)) readRDS(metadata_path) else NULL
 test_data <- readRDS(test_path)
 
+champion_info <- if (!is.null(metadata) && !is.null(metadata$champion)) metadata$champion else NULL
+champion_config_id <- if (!is.null(champion_info) && "config_id" %in% names(champion_info)) as.character(champion_info$config_id[1]) else "current_champion"
+champion_model_name <- if (!is.null(champion_info) && "model" %in% names(champion_info)) as.character(champion_info$model[1]) else NA_character_
+champion_strategy <- if (!is.null(champion_info) && "strategy" %in% names(champion_info)) as.character(champion_info$strategy[1]) else NA_character_
+
 if (!"claim_status" %in% names(test_data)) {
   stop("Variable cible introuvable dans le test set : claim_status")
 }
@@ -46,7 +51,7 @@ if (!".pred_yes" %in% names(prob_pred)) {
   stop("Colonne .pred_yes introuvable dans les predictions du modele.")
 }
 
-threshold_grid <- seq(0.01, 0.30, by = 0.01)
+threshold_grid <- seq(0.01, 0.60, by = 0.01)
 n_test <- nrow(test_data)
 
 threshold_analysis <- purrr::map_dfr(threshold_grid, function(threshold) {
@@ -85,7 +90,13 @@ threshold_analysis <- purrr::map_dfr(threshold_grid, function(threshold) {
     true_positives = tp,
     true_negatives = tn
   )
-})
+}) %>%
+  mutate(
+    config_id = champion_config_id,
+    model = champion_model_name,
+    strategy = champion_strategy,
+    .before = threshold
+  )
 
 statistical_threshold <- threshold_analysis %>%
   mutate(sort_f1 = ifelse(is.na(f1_score), -Inf, f1_score)) %>%

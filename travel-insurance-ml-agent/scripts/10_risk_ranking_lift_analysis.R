@@ -1,5 +1,5 @@
 # 10_risk_ranking_lift_analysis.R
-# Analyse de scoring/lift du modele champion XGBoost sans SMOTE.
+# Analyse de scoring/lift du modele champion courant.
 # Cette analyse complete la classification binaire : elle mesure la capacite du
 # score a concentrer les sinistres dans les dossiers les plus risques.
 
@@ -21,20 +21,26 @@ dir.create(here("reports"), recursive = TRUE, showWarnings = FALSE)
 dir.create(here("reports", "figures"), recursive = TRUE, showWarnings = FALSE)
 
 test_path <- here("data", "processed", "test_data.rds")
-model_path <- here("models", "xgboost__none_fit.rds")
+model_path <- here("models", "best_model.rds")
+metadata_path <- here("models", "model_metadata.rds")
 
 if (!file.exists(test_path)) {
   stop("Test set introuvable : data/processed/test_data.rds")
 }
 
 if (!file.exists(model_path)) {
-  stop("Modele XGBoost sans SMOTE introuvable : models/xgboost__none_fit.rds")
+  stop("Modele champion introuvable : models/best_model.rds")
 }
 
 test_data <- readRDS(test_path)
-xgb_none <- readRDS(model_path)
+champion_model <- readRDS(model_path)
+metadata <- if (file.exists(metadata_path)) readRDS(metadata_path) else NULL
+champion_info <- if (!is.null(metadata) && !is.null(metadata$champion)) metadata$champion else NULL
+champion_config_id <- if (!is.null(champion_info) && "config_id" %in% names(champion_info)) as.character(champion_info$config_id[1]) else "current_champion"
+champion_model_name <- if (!is.null(champion_info) && "model" %in% names(champion_info)) as.character(champion_info$model[1]) else NA_character_
+champion_strategy <- if (!is.null(champion_info) && "strategy" %in% names(champion_info)) as.character(champion_info$strategy[1]) else NA_character_
 
-prob_pred <- predict(xgb_none, new_data = test_data, type = "prob")
+prob_pred <- predict(champion_model, new_data = test_data, type = "prob")
 
 if (!".pred_yes" %in% names(prob_pred)) {
   stop("Colonne .pred_yes introuvable dans les predictions.")
@@ -46,6 +52,9 @@ scored_test <- bind_cols(
 ) %>%
   arrange(desc(.pred_yes)) %>%
   mutate(
+    config_id = champion_config_id,
+    model = champion_model_name,
+    strategy = champion_strategy,
     row_rank = row_number(),
     claim_flag = as.integer(claim_status == "yes"),
     cumulative_claims = cumsum(claim_flag),
@@ -66,6 +75,9 @@ segments <- tibble(
 risk_ranking_lift_table <- segments %>%
   rowwise() %>%
   mutate(
+    config_id = champion_config_id,
+    model = champion_model_name,
+    strategy = champion_strategy,
     n_observations = max(1, ceiling(total_observations * population_share)),
     n_claims_captured = sum(scored_test$claim_flag[seq_len(n_observations)]),
     share_of_total_claims_captured = n_claims_captured / total_claims,
@@ -75,6 +87,9 @@ risk_ranking_lift_table <- segments %>%
   ) %>%
   ungroup() %>%
   select(
+    config_id,
+    model,
+    strategy,
     segment,
     n_observations,
     n_claims_captured,
@@ -85,7 +100,7 @@ risk_ranking_lift_table <- segments %>%
   )
 
 write_csv(risk_ranking_lift_table, here("reports", "risk_ranking_lift_table.csv"))
-write_csv(scored_test, here("reports", "scored_test_xgboost_none.csv"))
+write_csv(scored_test, here("reports", "scored_test_champion.csv"))
 
 p_lift <- risk_ranking_lift_table %>%
   mutate(segment = factor(segment, levels = segment)) %>%

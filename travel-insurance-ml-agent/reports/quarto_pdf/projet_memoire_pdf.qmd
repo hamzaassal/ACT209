@@ -3,7 +3,7 @@ title: "Scoring du risque de sinistre en assurance voyage"
 subtitle: "Machine Learning, approche lift et agent IA d'aide à la souscription"
 author:
   - "Hamza Assal"
-  - "Abdou Ndiyaye"
+  - "Pape-Abdou Ndiyaye"
 date: "2026"
 lang: fr-FR
 
@@ -22,8 +22,6 @@ format:
     linkcolor: cnamblue
     urlcolor: cnamblue
     citecolor: cnamblue
-    lof: true
-    lot: true
     fig-cap-location: bottom
     tbl-cap-location: top
     include-in-header:
@@ -62,11 +60,10 @@ format:
           \vspace{0.45cm}
           {\LARGE Machine Learning, approche lift et agent IA d'aide à la souscription\par}
           \vfill
-          \begin{tabular}{rl}
+          \begin{tabular}{@{}r p{0.66\textwidth}@{}}
           Auteurs : & Hamza Assal \\
                    & Abdou Ndiyaye \\
           Projet : & Assurance voyage et agent IA d'aide à la souscription \\
-          
           Application : & Prototype Shiny et agent IA explicatif \\
           Date : & 2026 \\
           \end{tabular}
@@ -159,6 +156,9 @@ et recommandation"
 
 dimensions <- read_csv_if_exists(here("reports", "eda_dimensions.csv"))
 structure_summary <- read_csv_if_exists(here("reports", "eda_structure.csv"))
+numeric_summary <- read_csv_if_exists(here("reports", "eda_numeric_summary.csv"))
+categorical_by_target <- read_csv_if_exists(here("reports", "eda_categorical_by_target.csv"))
+correlation_matrix <- read_csv_if_exists(here("reports", "correlation_matrix.csv"))
 target_distribution <- read_csv_if_exists(here("reports", "target_distribution.csv"))
 model_comparison <- read_csv_if_exists(here("reports", "model_comparison.csv"))
 model_thresholds <- read_csv_if_exists(here("reports", "model_thresholds.csv"))
@@ -198,7 +198,6 @@ tariff_vs_no_tariff_champions <- read_csv_if_exists(here("reports", "tariff_vs_n
 confusion_matrix <- read_csv_if_exists(here("reports", "confusion_matrix.csv"))
 metadata <- if (file.exists(here("models", "model_metadata.rds"))) readRDS(here("models", "model_metadata.rds")) else NULL
 ```
-
 
 **Mots-clés :** assurance voyage ; sinistre rare ; scoring du risque ; aide à la souscription ; Machine Learning ; XGBoost ; SMOTE ; bootstrap ; validation croisée ; déséquilibre de classes ; ROC AUC ; PR AUC ; lift ; SHAP ; agent IA ; application Shiny ; underwriting.
 
@@ -288,7 +287,12 @@ L'approche finale du projet est donc orientée **scoring/ranking** plutôt que d
 
 # Modélisation du risque de sinistre
 
+Cette section présente la construction du modèle de risque de sinistre à partir de la base Travel Insurance. L'objectif n'est pas seulement de produire une classe prédite, mais de construire un score utilisable pour hiérarchiser les dossiers, éclairer une revue humaine et documenter les arbitrages entre sinistres détectés et faux positifs. Les résultats numériques sont repris des fichiers produits dans `reports/` et des artefacts sauvegardés dans `models/` ; aucun entraînement n'est relancé dans le rapport.
+
 ## Données et préparation du portefeuille
+
+La base initiale contient des informations relatives au canal de distribution, au produit souscrit, à la destination, à la durée du voyage, à l’âge de l’assuré, ainsi qu’aux variables tarifaires et commerciales du contrat. Elle est transformée en une table exploitable pour une modélisation supervisée : une ligne par dossier, une cible binaire explicite, des noms de variables stables et des contrôles de cohérence compatibles avec le prétraitement des données.
+`tidymodels`.
 
 ```{r data-overview}
 if (!is.null(dimensions)) {
@@ -296,210 +300,144 @@ if (!is.null(dimensions)) {
 }
 ```
 
-Les détails de structure et de complétude des variables sont disponibles en les fichiers de sortie du dossier `reports/`.
+La base brute contient **63 326 lignes** et 11 variables. Le nettoyage supprime **8 042 doublons exacts**, ce qui ramène le portefeuille exploitable à **55 284 observations** et **11 variables**. Cette suppression est importante : conserver des doublons stricts reviendrait à donner un poids artificiel à certains profils et pourrait biaiser l'apprentissage comme la validation.
 
-La base contient des informations relatives à l'agence, au canal de distribution, au produit, à la durée, à la destination, au montant des ventes nettes, à la commission, au genre et à l'âge. Les noms de colonnes sont standardisés avec `janitor::clean_names()`.
-
-### Nettoyage des données
-
-Le script d'import lit le CSV disponible dans `data/raw/`, standardise les colonnes, détecte la cible, supprime les doublons exacts et sauvegarde `data/processed/data_clean.rds`. Le fichier local contient une colonne `Claim`, renommée en `claim_status` afin de conserver une nomenclature stable dans tout le pipeline.
-
-Les valeurs manquantes détaillées sont reportées en les fichiers de sortie du dossier `reports/`.
-
-### Analyse exploratoire
-
-```{r target-plot-ref, results="asis"}
-cat("Voir [Figure A.1 - Distribution de la cible](#fig-a1-target).")
+```{r cleaning-audit}
+raw_path <- here("data", "raw", "travel_insurance.csv")
+clean_path <- here("data", "processed", "data_clean.rds")
+if (file.exists(raw_path) && file.exists(clean_path)) {
+  raw_data <- readr::read_csv(raw_path, show_col_types = FALSE)
+  clean_data <- readRDS(clean_path)
+  cleaning_audit <- tibble::tibble(
+    Indicateur = c("Base brute", "Doublons supprimés", "Base nettoyée", "Doublons restants"),
+    Valeur = c(nrow(raw_data), sum(duplicated(raw_data)), nrow(clean_data), sum(duplicated(clean_data)))
+  )
+  kable(cleaning_audit, caption = "Audit synthétique du nettoyage")
+}
 ```
+
+Les noms de colonnes sont standardisés avec la fonction `janitor::clean_names()`. La variable locale `Claim` est renommée `claim_status`, afin d’identifier clairement la cible dans l’ensemble de la chaîne de traitement. Les variables numériques principales (`duration`, `net_sales`, `commision_in_value`, `age`) ne présentent pas de valeurs manquantes dans la base nettoyée. La variable `gender` contient en revanche un volume important de valeurs manquantes. Elle n’est pas supprimée, car cela conduirait à retirer une part trop importante du portefeuille et pourrait modifier la représentativité des observations. Elle est donc conservée, puis traitée lors du prétraitement des données comme une information incomplète.
+
+Les valeurs atypiques sont conservées mais documentées. Des durées négatives ou très longues, des ventes nettes négatives ou des âges extrêmes peuvent correspondre à des erreurs de saisie, mais aussi à des annulations, à des ajustements commerciaux ou à des contrats particuliers. En l’absence de règle métier externe permettant de les qualifier avec certitude comme erreurs, une suppression automatique aurait introduit un choix arbitraire. Le choix retenu est donc prudent : conserver ces observations, les documenter, puis s’appuyer sur un prétraitement robuste avant la modélisation.
 
 ```{r target-table}
 if (!is.null(target_distribution)) {
-  kable(target_distribution, digits = 4, caption = "Distribution de claim_status")
+  target_display <- target_distribution %>%
+    transmute(Classe = claim_status, Observations = n, Part = share)
+  kable(target_display, digits = 4, caption = "Distribution de la cible claim_status")
 }
 ```
 
-```{r numeric-plot-ref, results="asis"}
-cat("Les graphiques détaillés des variables numériques sont conservés dans le dossier `reports/figures/` afin de ne pas alourdir le corps du mémoire.")
+Le taux de sinistre est de **1,67 %** : 921 sinistres contre 54 363 non-sinistres. Cette rareté explique pourquoi l'analyse exploratoire doit rester prudente. Certaines agences, certains produits et certaines destinations présentent des taux de sinistre plus élevés que la moyenne, mais ces écarts doivent être interprétés avec les volumes associés. L’analyse exploratoire sert donc à vérifier les ordres de grandeur, à repérer les variables plausiblement informatives et à préparer la modélisation, sans conclure à elle seule sur la causalité ou la rentabilité d'un segment.
+
+```{r fig-target-main, fig.cap="Distribution de la cible claim_status", out.width="72%", fig.align="center"}
+include_img(here("reports", "figures", "target_distribution.png"), "Distribution de la cible")
 ```
 
-```{r categorical-plot-ref, results="asis"}
-cat("Les graphiques détaillés des variables catégorielles sont conservés dans le dossier `reports/figures/` afin de ne pas alourdir le corps du mémoire.")
+La figure confirme visuellement que la classe sinistre est marginale. Pour l'assureur, cette situation implique que le modèle doit surtout être jugé sur sa capacité à isoler les dossiers les plus risqués, et non sur sa capacité à reconnaître la classe majoritaire. Elle justifie également la suite de l'analyse : métriques adaptées, validation stratifiée et étude des seuils.
+
+Les distributions numériques sont également asymétriques. La durée, les ventes nettes et la commission ont des queues longues ; la commission est souvent nulle, mais quelques contrats concentrent des montants élevés. Cette structure est typique d'un portefeuille commercial hétérogène et justifie l'utilisation de modèles capables de capter des effets non linéaires.
+
+```{r fig-numeric-main, fig.cap="Variables numériques selon la cible", out.width="86%", fig.align="center"}
+include_img(here("reports", "figures", "numeric_by_target.png"), "Variables numériques selon la cible")
 ```
 
-```{r corr-plot-ref, results="asis"}
-cat("La matrice de corrélation complète reste disponible dans le dossier `reports/figures/`.")
+La comparaison par cible ne montre pas une séparation simple et parfaite entre sinistres et non-sinistres. Les sinistres se situent plutôt dans certains segments de durée, d'âge ou de montant, avec beaucoup de recouvrement entre les classes. Cette lecture plaide pour une approche de scoring probabiliste : le modèle doit combiner plusieurs signaux faibles plutôt que chercher une règle univariée.
+
+```{r fig-categorical-main, fig.cap="Variables catégorielles selon la cible", out.width="86%", fig.align="center"}
+include_img(here("reports", "figures", "categorical_by_target.png"), "Variables catégorielles selon la cible")
 ```
 
-### Déséquilibre de classes
+Les variables catégorielles apportent une information métier importante : produit, agence, destination et canal de distribution structurent l'exposition du portefeuille. Les différences observées doivent toutefois être lues conjointement avec les volumes. Un taux élevé sur une modalité rare n'a pas la même portée actuarielle qu'un écart plus modéré sur un segment fortement représenté.
 
-```{r imbalance-text, results='asis'}
-if (!is.null(target_distribution)) {
-  yes_share <- target_distribution %>% filter(claim_status == "yes") %>% pull(share)
-  no_share <- target_distribution %>% filter(claim_status == "no") %>% pull(share)
-  cat(
-    "La proportion de sinistres observés est de **", fmt_pct(yes_share, 2),
-    "** contre **", fmt_pct(no_share, 2),
-    "** de contrats sans sinistre. Cette rareté rend l'accuracy insuffisante : un modèle qui prédit toujours `no` obtient une accuracy élevée, mais ne détecte aucun sinistre."
-  )
+```{r class-balance-main}
+if (!is.null(class_balance_summary)) {
+  class_balance_display <- class_balance_summary %>%
+    filter(dataset_stage %in% c("full_data_original", "train_before_smote", "test_unchanged")) %>%
+    transmute(
+      Étape = dataset_stage,
+      Non_sinistres = n_no,
+      Sinistres = n_yes,
+      `Part sinistres` = prop_yes,
+      Total = total_observations
+    )
+  kable(class_balance_display, digits = 4, caption = "Déséquilibre de classes avant rééquilibrage")
 }
 ```
 
-Dans ce contexte, le recall sur la classe `yes` devient une métrique métier importante : il mesure la part des sinistres effectivement détectés. La précision reste également utile, car elle indique la proportion de prédictions positives réellement sinistrées. La ROC AUC est retenue pour classer les modèles sur leur capacité globale de discrimination.
+La séparation entre l’échantillon d’apprentissage et l’échantillon de test est stratifiée sur `claim_status`. L’échantillon d’apprentissage contient **44 227 observations**, tandis que l’échantillon de test en contient **11 057**. Ce dernier reste inchangé pendant toute la démarche : il n’est ni rééquilibré, ni utilisé pour apprendre les transformations, ni mobilisé pour choisir le modèle. Cette séparation permet de limiter le risque de fuite de données et de conserver une évaluation plus réaliste de la performance.
 
-### Préprocessing
+Le prétraitement des données est appris uniquement sur l’échantillon d’apprentissage, ou à l’intérieur des plis de validation croisée. Il comprend l’imputation des valeurs manquantes, le regroupement des modalités rares, la gestion des nouvelles modalités, l’encodage one-hot, la normalisation éventuelle des variables numériques et la suppression des variables à variance nulle. Cette organisation permet d’appliquer à l’échantillon de test uniquement des transformations apprises en amont, ce qui se rapproche davantage d’une situation de production.
 
-La séparation train/test est réalisée avant tout apprentissage du preprocessing, avec une stratification sur `claim_status`. Le test set reste non modifié pendant tout le projet.
+L’enjeu méthodologique est central : si les modalités rares, les imputations ou les normalisations étaient estimées sur l’ensemble de la base avant la séparation apprentissage/test, l’échantillon de test influencerait indirectement l’apprentissage. Le rapport conserve donc une séparation stricte entre ce qui est appris sur l’échantillon d’apprentissage et ce qui est simplement projeté sur l’échantillon de test.
 
-La recette `tidymodels` applique l'imputation, le regroupement des modalités rares, la gestion des nouvelles modalités, l'encodage one-hot, la suppression des variables à variance nulle et la normalisation des variables numériques. Cette organisation évite les fuites de données, car les paramètres de preprocessing sont appris uniquement sur les données d'entraînement ou sur les folds de validation.
+## Modèle complet enrichi par variables tarifaires
 
-## Modèle complet avec variables tarifaires
+Le premier scénario conserve l’ensemble des informations disponibles, y compris les variables tarifaires et commerciales `net_sales` et `commision_in_value`. Il s’agit d’un **benchmark prédictif enrichi par variables tarifaires**, et non du modèle applicatif final. Ces variables peuvent améliorer la prédiction, car elles reflètent déjà une partie des caractéristiques économiques du contrat, du produit souscrit ou du canal de vente.
 
-Le benchmark compare deux stratégies :
+Cette information est utile pour mesurer la performance maximale atteignable avec la base disponible. Elle doit toutefois être interprétée avec prudence dans une perspective de souscription. Si le score est destiné à être calculé avant tarification définitive, utiliser une prime nette ou une commission déjà observée peut créer une forme de circularité : le modèle risque de réutiliser une information qui reflète déjà une décision commerciale ou tarifaire. C’est pourquoi le modèle sans variables tarifaires est discuté ensuite comme version plus adaptée à l’application Shiny.
 
-- `none` : apprentissage sans rééquilibrage ;
-- `smote` : application de SMOTE uniquement à l'intérieur des folds de validation croisée et sur le train lors du fit final.
+Le modèle complet garde donc une place importante dans le mémoire : il sert de référence statistique, permet de mesurer l’apport prédictif des variables tarifaires et donne un point de comparaison pour évaluer le coût prédictif d’une approche plus prudente sans prime ni commission.
 
-Les modèles effectivement entraînés sont : régression logistique, arbre de décision, random forest, XGBoost et CatBoost. CatBoost a nécessité une installation depuis la release officielle du projet, car le package n'était pas disponible via CRAN pour R 4.6.0 dans l'environnement local. Les résultats CatBoost sont donc produits dans un script dédié et comparés au champion XGBoost.
+## Benchmark, SMOTE et choix du champion
 
-Une précaution méthodologique doit être signalée : `net_sales` et `commission` peuvent porter une information redondante, la commission étant généralement liée au montant de prime ou de vente nette. Le modèle complet est donc interprété comme un benchmark prédictif utilisant toute l'information disponible, et non comme le modèle le plus propre pour une aide à la souscription en amont.
+Le benchmark compare plusieurs familles de modèles : régression logistique, arbre de décision, forêt aléatoire et XGBoost. Ces approches ne répondent pas exactement au même besoin. La régression logistique constitue une référence linéaire lisible ; l’arbre de décision est facilement interprétable mais peut être instable ; la forêt aléatoire améliore la robustesse par agrégation de plusieurs arbres ; XGBoost permet de capter plus finement les interactions et les non-linéarités, ce qui est pertinent pour un portefeuille combinant produit, destination, durée du voyage et variables tarifaires ou commerciales.
 
-La validation croisée est stratifiée en 5 folds. Les métriques calculées sont : accuracy, precision, recall, F1-score, ROC AUC et PR AUC. Les métriques sensibles à la classe événement sont calculées explicitement sur la classe positive `yes`.
+SMOTE est testé comme stratégie de rééquilibrage de la classe rare. Il crée des observations synthétiques de la classe `yes` uniquement dans l’échantillon d’apprentissage ou à l’intérieur des plis de validation croisée. L’échantillon de test reste inchangé. L’effet attendu est une amélioration du rappel, c’est-à-dire une meilleure détection des sinistres. La contrepartie possible est une augmentation du nombre de faux positifs, et donc une précision plus faible.
 
-### Gestion du déséquilibre par SMOTE
-
-SMOTE est utilisé comme stratégie de comparaison pour augmenter artificiellement la représentation de la classe rare dans les données d'entraînement. Il n'est jamais appliqué au test set.
-
-L'upsampling et le downsampling ne sont pas retenus dans le pipeline principal afin de garder une comparaison plus resserrée : `none` donne le point de référence, tandis que `smote` teste une approche synthétique adaptée aux classes rares. Le downsampling aurait supprimé de l'information dans une base déjà peu riche en sinistres, et l'upsampling simple aurait dupliqué des observations sans créer de diversité locale.
-
-#### Effet de SMOTE sur le déséquilibre de classes
-
-Dans le pipeline, SMOTE est appelé explicitement dans `scripts/04_model_training.R` avec `themis::step_smote(claim_status, over_ratio = 0.30, skip = TRUE)`. Il est ajouté à une recette dédiée, `recipe_smote`, après la séparation train/test réalisée dans `scripts/03_preprocessing.R`.
-
-Ainsi, SMOTE intervient uniquement sur les données d'entraînement : soit lors du fit final sur le train set, soit à l'intérieur des folds de validation croisée gérés par `tidymodels`. Le test set n'est jamais rééquilibré et conserve sa distribution réelle. Cette organisation évite une fuite de données, car aucune observation synthétique construite à partir de l'information d'entraînement ne vient contaminer l'évaluation finale.
-
-SMOTE ne duplique pas simplement les lignes minoritaires existantes. Il crée des observations synthétiques de la classe `yes` par interpolation locale entre observations minoritaires proches, ce qui enrichit l'espace d'apprentissage tout en limitant la simple répétition d'exemples.
-
-Le tableau détaillé de l'effet de SMOTE sur la distribution des classes est disponible en [Tableau B.1](#tab-b1-class-balance).
-
-```{r class-balance-plot-ref, results="asis"}
-cat("Voir [Figure A.2 - Effet de SMOTE sur la balance des classes](#fig-a2-smote-balance).")
+```{r fig-smote-main, fig.cap="Effet de SMOTE sur la balance des classes", out.width="78%", fig.align="center"}
+include_img(here("reports", "figures", "class_balance_smote_effect.png"), "Effet de SMOTE sur la balance des classes")
 ```
 
-#### Vérification de l’utilisation effective de SMOTE
+Cette figure rappelle que SMOTE ne transforme pas le problème métier : les sinistres restent rares dans l'e test set'échantillon test. Il modifie seulement la distribution vue par le modèle pendant l'apprentissage. Le gain attendu porte donc sur la sensibilité du modèle à la classe minoritaire, pas sur la fréquence réelle des sinistres dans le portefeuille.
 
-Un audit complémentaire vérifie que les modèles associés à la stratégie `smote` utilisent bien une base d'entraînement rééquilibrée. Pour la stratégie `none`, les modèles sont entraînés sur le train original non rééquilibré. Pour la stratégie `smote`, la recette contient explicitement `themis::step_smote(claim_status, over_ratio = 0.30, skip = TRUE)`, puis elle est préparée sur l'échantillon d'entraînement.
-
-Le résultat observé confirme que les configurations `smote` utilisent 56 539 observations d'entraînement, dont 13 047 sinistres synthétiques ou originaux, contre 44 227 observations et 735 sinistres pour la stratégie `none`. Le test set reste identique pour toutes les configurations, avec 11 057 observations et 186 sinistres.
-
-L'audit détaillé des données d'entraînement utilisées par stratégie est disponible en [Tableau B.2](#tab-b2-training-audit).
-
-Le rapport retient ici la version de benchmark dans laquelle les configurations sont classées par validation croisée stratifiée selon la ROC AUC, puis le F1-score et le recall sur la classe `yes`. Dans cette version, `xgboost__smote` est le modèle retenu : il présente la meilleure ROC AUC du classement et un recall nettement supérieur à la version sans rééquilibrage.
-
-Les tableaux d'audit recalculés configuration par configuration sur le test set final restent disponibles dans les fichiers CSV du projet, mais ils ne sont pas affichés dans cette section afin de conserver une lecture cohérente du scénario retenu pour le mémoire : le benchmark complet avec variables tarifaires et stratégie SMOTE de référence.
-
-```{r selected-smote-benchmark}
-if (!is.null(model_ranking)) {
-  selected_benchmark <- model_ranking %>%
-    filter(model %in% c("xgboost", "logistic_regression", "random_forest", "decision_tree")) %>%
-    select(config_id, model, strategy, roc_auc, f_meas, recall) %>%
-    arrange(desc(roc_auc), desc(f_meas), desc(recall))
-  kable(
-    selected_benchmark,
-    digits = 4,
-    caption = "Benchmark retenu pour le rapport : classement de validation croisée"
-  )
+```{r model-thresholds-clean-section2}
+if (!is.null(metadata) && !is.null(metadata$model_thresholds)) {
+  model_thresholds_clean <- metadata$model_thresholds %>%
+    transmute(
+      Configuration = config_id,
+      Modèle = model,
+      Stratégie = strategy,
+      Seuil = threshold,
+      Précision = precision,
+      Recall = recall,
+      F1 = f_meas
+    ) %>%
+    arrange(desc(F1), desc(Recall))
+  kable(model_thresholds_clean, digits = 4, caption = "Comparaison synthétique des configurations au seuil calibré")
 }
 ```
 
-#### Sensibilité à l'intensité du rééquilibrage SMOTE
-
-L'analyse précédente utilise un SMOTE avec `over_ratio = 0.30`, ce qui revient à viser un ratio minoritaire / majoritaire d'environ 30 %. En proportion totale, cela produit environ 23 % de sinistres dans l'échantillon d'entraînement préparé. Cette intensité est nettement supérieure à la fréquence réelle des sinistres, proche de 1,7 %, et peut donc déformer la distribution d'apprentissage.
-
-SMOTE n'est pas une méthode automatiquement meilleure. Il peut aider le modèle à voir davantage de cas minoritaires, mais un rééquilibrage trop fort peut augmenter les faux positifs, dégrader la précision, perturber le ranking des scores ou réduire la PR AUC. Pour cette raison, une analyse complémentaire teste deux intensités plus modérées :
-
-- `smote_10` : `over_ratio = 0.111`, soit environ 10 % de sinistres et 90 % de non-sinistres ;
-- `smote_20` : `over_ratio = 0.25`, soit environ 20 % de sinistres et 80 % de non-sinistres.
-
-Le test set reste inchangé pour toutes les configurations. Le choix final ne doit donc pas se limiter à une seule métrique : il doit tenir compte à la fois des métriques de classification, de la PR AUC et de l'analyse de ranking/lift.
-
-Cette sous-section ne correspond pas au benchmark principal `none` versus `smote` avec `over_ratio = 0.30`. Elle teste volontairement des intensités plus modérées de SMOTE, nommées `smote_10` et `smote_20`, afin de documenter la sensibilité de la méthode au niveau de rééquilibrage. Ces variantes sont présentées comme des contrôles méthodologiques ; le scénario utilisé pour la sélection principale reste le benchmark de référence, dans lequel le modèle retenu est `xgboost__smote`.
-
-Les proportions obtenues selon les intensités de SMOTE sont disponibles en [Tableau B.3](#tab-b3-smote-intensity).
-
-Les tests `smote_10` et `smote_20` sont conservés comme analyse de sensibilité méthodologique : ils vérifient qu'un SMOTE plus modéré ne produit pas mécaniquement un meilleur modèle. Pour éviter de mélanger plusieurs scénarios de sélection, les tableaux détaillés de ces variantes ne sont pas repris dans le corps du rapport. Le résultat utilisé pour la comparaison principale reste le benchmark de référence où `xgboost__smote` est retenu.
-
-Les résultats du benchmark complet montrent que SMOTE peut apporter un gain lorsque toutes les variables disponibles sont conservées. Dans cette configuration, le meilleur modèle est `xgboost__smote` : il présente une ROC AUC légèrement supérieure à `xgboost__none` et un recall nettement plus élevé sur la classe `yes`. Cette stratégie est donc retenue comme champion statistique du modèle complet.
-
-Cette lecture doit toutefois rester critique. SMOTE n'est pas une méthode automatiquement meilleure : son efficacité dépend de la structure des variables utilisées par le modèle. Dans le modèle complet, les variables tarifaires comme `net_sales` et `commision_in_value` structurent fortement l'espace des observations. Elles fournissent des signaux continus et fortement informatifs, ce qui peut rendre les observations synthétiques créées par SMOTE plus cohérentes pour XGBoost. Dans ce cas, SMOTE aide le modèle à mieux apprendre une frontière de risque autour de la classe rare.
-
-En revanche, lorsque les variables tarifaires sont retirées, le modèle s'appuie davantage sur des variables catégorielles encodées en one-hot et sur des signaux moins directement discriminants. SMOTE peut alors interpoler dans un espace moins naturel : certaines observations synthétiques deviennent moins représentatives de vrais profils métier. Cette hypothèse explique pourquoi SMOTE améliore le modèle complet mais ne gagne pas dans l'approche sans variables tarifaires. Le résultat est important pour le mémoire : il montre que SMOTE doit être considéré comme une hypothèse de modélisation à tester, et non comme un correctif automatique au déséquilibre de classes.
-
-### Optimisation des hyperparamètres
-
-Une étape complémentaire d'optimisation des hyperparamètres a été ajoutée afin de vérifier si le modèle champion pouvait être amélioré de manière raisonnable. L'objectif n'est pas de réaliser une recherche exhaustive, mais de produire une comparaison propre, reproductible et présentable dans un mémoire actuariel.
-
-Le tuning est limité aux familles de modèles les plus pertinentes pour ce projet : XGBoost sans SMOTE, XGBoost avec pondération de classe, XGBoost avec SMOTE léger, Random Forest et CatBoost. CatBoost est inclus dans les tableaux de comparaison au même titre que les autres familles de modèles. Son entraînement est réalisé via l'API native R, car cette API ne s'intègre pas directement au workflow `tidymodels` utilisé pour XGBoost et Random Forest.
-
-La validation croisée reste stratifiée en 5 folds pour XGBoost et Random Forest. Pour CatBoost, une première tentative plus large en 5-fold s'est avérée trop coûteuse localement ; une grille contrôlée a donc été exécutée en validation croisée stratifiée 3-fold. Les métriques prioritaires sont la ROC AUC et la PR AUC, car le problème est fortement déséquilibré. Les métriques de classification au seuil, comme le F1-score, le recall et la précision, sont également calculées, mais elles ne suffisent pas à elles seules pour juger un modèle orienté scoring. Le lift dans le Top 10 % des scores reste une métrique métier importante, car l'application vise à prioriser les dossiers les plus risqués.
-
-Pour XGBoost, les hyperparamètres testés sont : `trees`, `tree_depth`, `learn_rate`, `loss_reduction`, `min_n`, `sample_size` et `mtry`. Une variante avec pondération de classe est aussi testée via `scale_pos_weight`, avec plusieurs valeurs dont la valeur empirique `no / yes` observée sur le train. Cette pondération est une alternative à SMOTE : elle conserve les observations originales mais modifie le poids relatif des erreurs sur la classe minoritaire.
-
-Pour Random Forest, la grille porte sur `mtry`, `trees` et `min_n`. Le tuning reste volontairement limité afin d'éviter une optimisation trop lourde et peu lisible dans le cadre du mémoire.
-
-Pour CatBoost, les stratégies testées sont `none`, `smote` et `weighted`. Les versions `none` et `weighted` exploitent directement les variables catégorielles via l'API native CatBoost. La version `smote` utilise la recette de preprocessing avec `step_smote()` uniquement sur le train, ce qui impose une représentation encodée des variables. La pondération de classe teste plusieurs valeurs du poids de la classe `yes`, dont le ratio empirique `no / yes`.
-
-Les tableaux complets du tuning restent sauvegardés dans les fichiers CSV dédiés (`reports/hyperparameter_tuning_results.csv`, `reports/best_tuned_models.csv`, `reports/tuned_model_test_metrics.csv`, `reports/tuned_model_lift_analysis.csv` et `reports/champion_vs_tuned_comparison.csv`). Pour garder une lecture cohérente du rapport principal, cette section ne réaffiche pas les variantes historiques ou intermédiaires qui ne correspondent pas au scénario final retenu. La conclusion utilisée dans le mémoire est la suivante : aucun modèle tuné ne remplace le champion du benchmark complet, `xgboost__smote`.
-
-
-Les résultats montrent que le tuning ne justifie pas de remplacer le modèle champion actuel. Le meilleur candidat tuné est un XGBoost pondéré, mais il n'améliore pas le champion sur le test set : la ROC AUC et la PR AUC restent légèrement inférieures, et le lift Top 10 % est comparable mais non supérieur. Surtout, le seuil retenu par validation croisée pour ce modèle est très conservateur : il améliore la précision mais détecte très peu de sinistres, ce qui réduit fortement son intérêt opérationnel.
-
-Le modèle XGBoost avec SMOTE reste le meilleur benchmark prédictif global lorsque les variables tarifaires sont conservées. Pour l'application Shiny, la version sans variables tarifaires est toutefois privilégiée afin d'éviter une recommandation fondée sur une prime ou une commission déjà calculée. Dans les tableaux comparatifs, CatBoost fait partie des candidats évalués au même niveau que les autres modèles. Il apporte des arbitrages intéressants, notamment sur le recall dans les versions pondérées ou rééquilibrées, mais il ne dépasse pas le champion complet `xgboost__smote` sur le critère de sélection statistique.
-
-### Choix du modèle champion complet
-
-Cette section consolide les dernières évolutions du projet : sensibilité à l'intensité de SMOTE, ajout effectif de CatBoost et optimisation raisonnable des hyperparamètres. Le choix final ne repose pas uniquement sur une métrique de classification binaire. Dans ce contexte de sinistres rares, la ROC AUC, la PR AUC et les indicateurs de ranking, en particulier le lift dans le Top 10 % et le Top 20 %, sont essentiels pour juger l'utilité opérationnelle du modèle.
+Le champion complet retenu est **`xgboost__smote`**. Ce choix est cohérent avec l'objectif de détection d'événements rares : il accepte plus d'alertes pour récupérer davantage de sinistres. Dans un contexte d'aide à la souscription, ce compromis est défendable si les alertes servent à prioriser une revue humaine plutôt qu'à prendre une décision automatique.
 
 ```{r final-model-selection-summary}
 if (!is.null(final_model_selection_summary)) {
   final_selection_display <- final_model_selection_summary %>%
     transmute(
       Candidat = candidate_model,
-      Strategie = strategy,
+      Stratégie = strategy,
       `ROC AUC` = roc_auc,
       `PR AUC` = pr_auc,
       Recall = recall,
+      Précision = precision,
       `Lift 10 %` = lift_top_10
     )
-  kable(final_selection_display, digits = 4, caption = "Synthèse finale de sélection du modèle")
-} else {
-  cat("Le fichier reports/final_model_selection_summary.csv n'a pas encore été produit.")
+  kable(final_selection_display, digits = 4, caption = "Synthèse finale de sélection du modèle complet")
 }
 ```
 
-**Lecture du tableau.** Le modèle retenu dans le benchmark complet est la version XGBoost avec SMOTE. Il est privilégié pour sa capacité à mieux rappeler les sinistres tout en conservant une discrimination satisfaisante.
+Les tableaux complets de tuning, les variantes détaillées de SMOTE et les classements intermédiaires sont conservés en annexe ou dans les fichiers `reports/*.csv`. Ils ne sont pas repris intégralement dans le corps du rapport afin de préserver le fil actuariel principal.
 
-La synthèse finale distingue le champion prédictif et le champion applicatif. Le benchmark complet retient `xgboost__smote` : c'est le meilleur candidat statistique lorsque l'on conserve toute l'information disponible, y compris les variables tarifaires. L'analyse complémentaire sans variables tarifaires retient en revanche XGBoost sans SMOTE : dans cette seconde approche, SMOTE ne parvient pas à dépasser la stratégie `none`. Cette différence est cohérente avec la nature des variables utilisées : SMOTE semble plus efficace dans l'espace complet, structuré par des variables continues très informatives, que dans l'espace sans tarif, plus fortement dominé par des variables catégorielles encodées.
+Le choix de `xgboost__smote` ne signifie donc pas que SMOTE est systématiquement supérieur, ni que XGBoost doit être retenu dans tous les contextes. Il signifie que, pour ce portefeuille et cette information disponible, cette combinaison donne le meilleur compromis observé entre discrimination globale, détection des sinistres et stabilité de la performance.
 
-### Comparaison des modèles
-
-Le classement complet des configurations est disponible en [Tableau B.4](#tab-b4-model-ranking).
-
-Le tableau de classement ci-dessus est la synthèse utilisée pour la décision : il agrège les résultats du benchmark selon la règle de sélection retenue. Les métriques détaillées par configuration restent sauvegardées dans `reports/model_comparison.csv`, mais elles ne sont pas affichées ici pour éviter de multiplier les lectures partielles du même benchmark.
-
-Le choix du modèle champion suit l'ordre défini : ROC AUC, puis F1-score, puis recall sur `yes`. Cette règle privilégie d'abord la capacité de discrimination des probabilités, puis la qualité de classification de la classe sinistre.
-
-Un audit de la logique ML a conduit à calibrer un seuil de décision par configuration à partir des prédictions out-of-fold. Cette étape est importante : comparer les F1-scores au seuil arbitraire de 0,5 aurait pénalisé les modèles capables de discriminer les sinistres mais conservateurs dans leurs probabilités.
-
-Les seuils calibrés par configuration sont disponibles en [Tableau B.5](#tab-b5-model-thresholds).
-
-### Résultats du modèle champion complet
+## Résultats du champion et lecture métier
 
 ```{r champion-text, results='asis'}
 if (!is.null(metadata)) {
   champ <- metadata$champion
   threshold <- metadata$decision_threshold$threshold
   cat(sprintf(
-    "Le modèle champion est **%s**. Le seuil de décision utilisé pour les métriques finales est **%s**, calibré sur les prédictions out-of-fold de validation croisée afin de maximiser le F1-score sans utiliser le test set.",
+    "Le modèle champion complet est **%s**. Le seuil de décision retenu pour les métriques finales est **%s**.",
     champ$config_id,
     threshold
   ))
@@ -509,37 +447,38 @@ if (!is.null(metadata)) {
 ```{r final-metrics}
 if (!is.null(final_metrics)) {
   final_metrics_display <- final_metrics %>%
-    transmute(
-      Metrique = .metric,
-      Valeur = .estimate
-    )
-  kable(final_metrics_display, digits = 4, caption = "Métriques finales sur le test set non modifié")
+    transmute(Métrique = .metric, Valeur = .estimate)
+  kable(final_metrics_display, digits = 4, caption = "Métriques finales du champion sur le test set")
 }
 ```
 
 ```{r confusion-table}
 if (!is.null(confusion_matrix)) {
-  kable(confusion_matrix, caption = "Matrice de confusion sur le test set")
+  confusion_display <- confusion_matrix %>%
+    transmute(Prédiction = Prediction, Réalité = Truth, Nombre = n)
+  kable(confusion_display, caption = "Matrice de confusion sur le test set")
 }
 ```
 
-```{r confusion-plot-ref, results="asis"}
-cat("Voir [Figure A.3 - Matrice de confusion](#fig-a3-confusion).")
+Au seuil **0,48**, la matrice de confusion donne **TN = 10 044**, **FP = 827**, **FN = 109** et **TP = 77**. Le modèle détecte donc une partie significative des sinistres, avec un **recall de 0,4140**, mais il génère aussi de nombreuses alertes, avec une **précision de 0,0852**.
+
+La **ROC AUC de 0,8218** indique une bonne capacité de discrimination globale : le modèle ordonne correctement une partie importante des dossiers selon leur risque. La **PR AUC de 0,0845** reste modeste en valeur absolue, mais elle est à lire dans un contexte où la prévalence n'est que de 1,67 %. Le **F1 de 0,1413** traduit le compromis difficile entre détection et pureté des alertes.
+
+```{r fig-roc-main, fig.cap="Courbe ROC du modèle champion", out.width="74%", fig.align="center"}
+include_img(here("reports", "figures", "roc_curve.png"), "Courbe ROC du modèle champion")
 ```
 
-```{r roc-plot-ref, results="asis"}
-cat("Voir [Figure A.4 - Courbe ROC](#fig-a4-roc).")
+```{r fig-pr-main, fig.cap="Courbe précision-rappel du modèle champion", out.width="74%", fig.align="center"}
+include_img(here("reports", "figures", "precision_recall_curve.png"), "Courbe précision-rappel du modèle champion")
 ```
 
-```{r pr-plot-ref, results="asis"}
-cat("Voir [Figure A.5 - Courbe précision/rappel](#fig-a5-pr).")
-```
+La courbe ROC montre que le modèle conserve une capacité de ranking exploitable sur l'ensemble du test set. La courbe précision-rappel est plus sévère, ce qui est normal dans un portefeuille où les sinistres sont rares : dès que le modèle cherche à détecter davantage de sinistres, il inclut nécessairement beaucoup de dossiers non sinistrés parmi les alertes.
 
-### Analyse de seuils du modèle complet
+La lecture métier est donc nuancée. Le champion complet est plutôt prudent : il cherche à détecter plus de sinistres, quitte à produire des faux positifs. Il est utile pour prioriser une revue humaine et organiser les contrôles, mais il ne doit pas être utilisé comme règle automatique d'acceptation, de refus ou de tarification.
 
-Une analyse complémentaire a été réalisée sur le test set pour comprendre l'effet du seuil de décision du modèle champion XGBoost. Les seuils testés vont de 0,01 à 0,30 par pas de 0,01.
+## Seuils et robustesse
 
-Cette analyse illustre un arbitrage central en assurance : diminuer le seuil augmente le nombre de sinistres détectés, donc le recall, mais augmente aussi les faux positifs. À l'inverse, augmenter le seuil améliore généralement la précision, mais laisse davantage de sinistres non détectés.
+Le seuil de classification influence directement le nombre de sinistres détectés, le volume d'alertes et le nombre de faux positifs. En assurance, ce seuil n'est pas uniquement un paramètre statistique : il dépend de la capacité opérationnelle de revue, du coût d'une alerte inutile et du coût d'un sinistre non identifié.
 
 ```{r selected-thresholds}
 if (!is.null(selected_thresholds)) {
@@ -547,210 +486,46 @@ if (!is.null(selected_thresholds)) {
     transmute(
       Type = threshold_type,
       Seuil = threshold,
-      Accuracy = accuracy,
-      Precision = precision,
+      Précision = precision,
       Recall = recall,
       F1 = f1_score,
-      `Positifs prédits` = positives_predicted,
       FP = false_positives,
       FN = false_negatives
     )
-  kable(selected_thresholds_display, digits = 4, caption = "Seuils sélectionnés : statistique et métier")
+  kable(selected_thresholds_display, digits = 4, caption = "Seuils sélectionnés : lecture statistique et métier")
 }
 ```
 
-Le seuil statistique maximise le F1-score. Il cherche un équilibre entre precision et recall. Le seuil métier impose une contrainte différente : atteindre au moins 50 % de recall lorsque cela est possible. Ce second seuil accepte davantage de faux positifs afin de capter une part plus importante des sinistres.
+Le seuil maximisant le F1 est **0,34**. Il augmente le recall mais élargit fortement le portefeuille d'alertes. Le seuil métier visant un recall d'au moins 50 % est **0,39** : il conserve une détection supérieure à la moitié des sinistres, tout en réduisant légèrement le nombre de faux positifs. Ces deux seuils illustrent deux politiques possibles, mais aucun ne constitue une règle universelle. Le choix final doit être aligné avec la politique de souscription.
 
-```{r threshold-f1-ref, results="asis"}
-cat("Voir [Figure A.6 - F1-score selon le seuil](#fig-a6-threshold-f1).")
+```{r fig-threshold-main, fig.cap="F1-score selon le seuil de décision", out.width="78%", fig.align="center"}
+include_img(here("reports", "figures", "threshold_f1_score.png"), "F1-score selon le seuil")
 ```
 
-```{r threshold-pr-ref, results="asis"}
-cat("Les courbes complémentaires de précision/rappel par seuil restent disponibles dans `reports/figures/`.")
-```
-
-```{r threshold-errors-ref, results="asis"}
-cat("Les courbes détaillées de faux positifs et faux négatifs par seuil restent disponibles dans `reports/figures/`.")
-```
-
-```{r threshold-positives-ref, results="asis"}
-cat("La courbe du nombre de positifs prédits par seuil reste disponible dans `reports/figures/`.")
-```
-
-Le tableau complet de l'analyse de seuils est disponible en le fichier `reports/threshold_analysis.csv`.
-
-### Validation bootstrap du modèle complet
-
-Le bootstrap est appliqué uniquement au modèle champion pour mesurer la stabilité statistique de ses performances. Il ne sert pas à corriger le déséquilibre de classes. À chaque réplication, un échantillon bootstrap du train est tiré, le modèle champion est réentraîné, puis évalué sur le test set initial non modifié.
+La figure montre que le choix du seuil n'est pas neutre : une variation modérée peut changer fortement le nombre de dossiers envoyés en revue. En pratique, le seuil devrait donc être fixé avec une contrainte opérationnelle explicite, par exemple un volume maximal d'alertes ou un niveau minimal de sinistres détectés.
 
 ```{r bootstrap-summary}
 if (!is.null(bootstrap_summary)) {
   bootstrap_display <- bootstrap_summary %>%
+    filter(metric %in% c("roc_auc", "recall", "f_meas")) %>%
     transmute(
-      Metrique = metric,
+      Métrique = metric,
       Moyenne = mean,
-      `Ecart-type` = sd,
       `Q2.5 %` = q025,
-      Mediane = median,
+      Médiane = median,
       `Q97.5 %` = q975
     )
-  kable(bootstrap_display, digits = 4, caption = "Résumé bootstrap du modèle champion")
+  kable(bootstrap_display, digits = 4, caption = "Résumé bootstrap du champion complet")
 }
 ```
 
-```{r bootstrap-auc-ref, results="asis"}
-cat("Voir [Figure A.7 - Distribution bootstrap de la ROC AUC](#fig-a7-bootstrap-auc).")
+La validation bootstrap vérifie que les performances ne dépendent pas excessivement d'un seul split d'apprentissage. La ROC AUC moyenne est **0,8177**, avec un intervalle empirique d'environ **0,8091 à 0,8261**. Cette faible dispersion confirme une discrimination relativement stable. Le recall est plus variable, autour de **0,4444**, ce qui est attendu avec seulement 186 sinistres dans le test set. Le modèle reste donc robuste comme outil de scoring, mais ses alertes positives doivent être interprétées comme une aide à la priorisation et non comme une décision contractuelle.
+
+```{r fig-bootstrap-main, fig.cap="Distribution bootstrap de la ROC AUC", out.width="78%", fig.align="center"}
+include_img(here("reports", "figures", "bootstrap_auc_distribution.png"), "Distribution bootstrap de la ROC AUC")
 ```
 
-```{r bootstrap-f1-ref, results="asis"}
-cat("Les distributions bootstrap du F1-score et du recall restent disponibles dans `reports/figures/`.")
-```
-
-```{r bootstrap-recall-ref, results="asis"}
-cat("Les distributions bootstrap complémentaires restent disponibles dans `reports/figures/`.")
-```
-
-## Modèle applicatif sans variables tarifaires
-
-### Motivation méthodologique
-
-L'analyse SHAP du modèle complet, reportée en [Figure A.9](#fig-a9-shap), fait apparaître une question méthodologique importante : les variables tarifaires, notamment `net_sales` et `commision_in_value`, sont très informatives pour prédire la survenance d'un sinistre. Cette information est utile d'un point de vue prédictif, mais elle doit être interprétée avec prudence dans une application destinée à un underwriter.
-
-En effet, la prime nette et la commission peuvent déjà refléter une partie du processus commercial ou tarifaire. Si le modèle utilise ces variables pour produire une recommandation, il existe un risque de circularité : le dossier est jugé risqué en partie parce qu'il a déjà été vendu, tarifé ou commissionné selon une logique qui intègre elle-même des éléments de risque. Cette situation n'est pas forcément problématique pour un benchmark prédictif, mais elle est moins satisfaisante pour un outil d'aide à la décision qui doit expliquer le risque à partir des caractéristiques du dossier.
-
-Pour cette raison, une deuxième approche a été construite dans `scripts/no_tariff/01_no_tariff_benchmark.R`. Elle retire les variables tarifaires disponibles avant de reconstruire les recettes de preprocessing et de relancer le benchmark. Dans les données actuellement préparées, les variables effectivement retirées sont `net_sales` et `commision_in_value`. Le script vérifie aussi les variantes `commision` et `commission` si une autre version du dataset les utilise.
-
-Cette deuxième approche répond donc à une question différente du benchmark initial :
-
-- le modèle complet cherche la meilleure performance prédictive avec toute l'information disponible ;
-- le modèle sans variables tarifaires cherche une lecture plus prudente pour l'underwriting, en évitant de fonder la recommandation sur une prime ou une commission déjà calculée.
-
-Le classement détaillé des modèles sans variables tarifaires est disponible en [Tableau B.6](#tab-b6-no-tariff-ranking).
-
-```{r tariff-vs-no-tariff}
-if (!is.null(tariff_vs_no_tariff_champions)) {
-  tariff_comparison_display <- tariff_vs_no_tariff_champions %>%
-    mutate(
-      approach_label = dplyr::recode(
-        approach,
-        modele_complet = "Complet",
-        sans_variables_tarifaires = "Sans tarif",
-        .default = approach
-      ),
-      modele_strategie = paste(champion_model, strategy)
-    ) %>%
-    transmute(
-      Approche = approach_label,
-      Modele = modele_strategie,
-      `ROC AUC` = roc_auc,
-      Recall = recall,
-      `Lift 10 %` = lift_top_10
-    )
-  kable(tariff_comparison_display, digits = 4, caption = "Comparaison des champions : modèle complet vs modèle sans variables tarifaires")
-} else {
-  cat("Le fichier reports/tariff_vs_no_tariff_champions.csv n'a pas été produit.")
-}
-```
-
-**Lecture du tableau.** Le modèle complet conserve le meilleur candidat statistique avec SMOTE. Le modèle sans variables tarifaires est retenu pour l'application Shiny, car il évite de fonder l'aide à la souscription sur une prime ou une commission déjà calculée.
-
-### Résultats de la deuxième approche
-
-Les résultats montrent que le champion de l'approche sans variables tarifaires est XGBoost sans SMOTE. Le retrait de `net_sales` et `commision_in_value` entraîne une baisse de performance prédictive par rapport au modèle complet, ce qui confirme que ces variables concentraient une information importante. Le modèle sans variables tarifaires conserve toutefois une capacité de scoring exploitable et présente une lecture plus prudente pour l'application Shiny.
-
-La comparaison des deux approches est donc la suivante : dans le modèle complet, le champion retenu est XGBoost avec SMOTE ; dans le modèle sans variables tarifaires, le champion est XGBoost sans SMOTE. Ce résultat ne constitue pas une contradiction, mais une information méthodologique importante : l'intérêt de SMOTE dépend fortement de l'espace de variables dans lequel il est appliqué.
-
-### Pourquoi SMOTE n'améliore pas le modèle sans variables tarifaires ?
-
-SMOTE crée des observations synthétiques de la classe minoritaire en interpolant entre des observations existantes. Cette logique fonctionne mieux lorsque l'espace d'apprentissage est suffisamment continu et structuré. Dans le modèle complet, les variables tarifaires comme `net_sales` et `commision_in_value` fournissent justement des signaux numériques continus, fortement liés à la sinistralité. Elles peuvent aider XGBoost à construire une frontière de risque plus stable autour des sinistres synthétiques générés par SMOTE.
-
-Lorsque ces variables sont retirées, l'information disponible repose davantage sur des variables catégorielles encodées en one-hot, comme l'agence, le canal de distribution, le type de produit ou la destination. Dans un tel espace, l'interpolation synthétique devient moins naturelle : les profils créés par SMOTE peuvent correspondre à des combinaisons de modalités moins réalistes ou moins discriminantes métier. Le modèle peut alors apprendre du bruit ou des frontières artificielles qui dégradent le ranking des scores.
-
-Une autre explication est liée au signal prédictif disponible. Sans les variables tarifaires, le modèle dispose de moins d'information continue pour séparer les sinistres des non-sinistres. Ajouter des observations synthétiques ne compense pas nécessairement cette perte d'information ; au contraire, cela peut augmenter les faux positifs ou affaiblir la calibration des probabilités. Dans cette configuration, le déséquilibre de classes reste un problème, mais SMOTE n'est pas le correctif le plus efficace.
-
-Ce point est important d'un point de vue actuariel : SMOTE ne doit pas être présenté comme une solution automatique au déséquilibre de classes. Il s'agit d'une hypothèse de modélisation à tester empiriquement. Ici, il améliore le benchmark complet avec variables tarifaires, mais il ne s'impose pas dans l'approche sans variables tarifaires. Cette différence renforce la nécessité de comparer plusieurs architectures de variables avant de choisir le modèle à déployer.
-
-Pour un usage purement prédictif, le modèle complet avec SMOTE reste le meilleur candidat statistique dans la version retenue du benchmark. Pour une application underwriter-ready, la version sans variables tarifaires reste cependant plus prudente, car elle réduit le risque de circularité entre tarification déjà calculée et conseil donné à l'underwriter.
-
-```{r no-tariff-comparison-plot-ref, results="asis"}
-cat("Voir [Figure A.8 - Comparaison des champions complet et sans variables tarifaires](#fig-a8-tariff-comparison).")
-```
-
-### Pouvoir de scoring du modèle sans variables tarifaires
-
-#### Pourquoi analyser le modèle comme un score ?
-
-Le modèle sans variables tarifaires n'est pas retenu parce qu'il produit une classification binaire parfaite. Le problème reste fortement déséquilibré : les sinistres sont rares dans le test set, avec un taux moyen proche de 1,68 %. Dans ce contexte, la classification directe au seuil donne une vision utile mais partielle. L'enjeu métier est plutôt de savoir si le modèle permet de hiérarchiser les dossiers et de concentrer les sinistres dans les segments de score les plus élevés.
-
-Cette analyse est particulièrement pertinente pour l'application Shiny, car l'outil applicatif utilise le modèle sans variables tarifaires. Le score doit donc être présenté comme un signal de priorisation du risque, et non comme une décision automatique.
-
-#### Principe de l'analyse par score
-
-Le modèle XGBoost sans variables tarifaires produit une probabilité estimée de sinistre pour chaque observation du test set. Les dossiers sont ensuite triés par score décroissant. Les segments Top 1 %, Top 5 %, Top 10 %, Top 20 % et Top 30 % correspondent aux dossiers ayant les scores de risque les plus élevés. On mesure ensuite combien de sinistres réels sont contenus dans ces segments.
-
-Les indicateurs utilisés sont les suivants :
-
-- **Observations** : nombre de dossiers dans le segment considéré.
-- **Sinistres capturés** : nombre de vrais sinistres présents dans le segment.
-- **% des sinistres capturés** : part des sinistres totaux du test set retrouvés dans le segment.
-- **Taux de sinistre segment** : nombre de sinistres du segment divisé par le nombre d'observations du segment.
-- **Taux moyen test** : fréquence globale des sinistres dans le test set.
-- **Lift** : rapport entre le taux de sinistre du segment et le taux moyen de sinistre du test set.
-
-Formellement : `Lift = taux de sinistre du segment / taux moyen de sinistre du test set`.
-
-```{r no-tariff-risk-ranking-lift-table}
-if (!is.null(no_tariff_lift_table)) {
-  no_tariff_lift_display <- no_tariff_lift_table %>%
-    filter(config_id == "no_tariff_clean__xgboost__none") %>%
-    mutate(
-      segment = recode(
-        segment,
-        top_1_percent = "Top 1 %",
-        top_5_percent = "Top 5 %",
-        top_10_percent = "Top 10 %",
-        top_20_percent = "Top 20 %",
-        top_30_percent = "Top 30 %"
-      ),
-      `% capturés` = fmt_pct(share_of_total_claims_captured, 2),
-      `Taux segment` = fmt_pct(claim_rate_in_segment, 2),
-      `Taux test` = fmt_pct(baseline_claim_rate, 2),
-      Lift = round(lift, 2)
-    ) %>%
-    transmute(
-      Segment = segment,
-      Obs. = n_observations,
-      Sinistres = n_claims_captured,
-      `% capturés`,
-      `Taux segment`,
-      `Taux test`,
-      Lift
-    )
-  kable(no_tariff_lift_display, caption = "Concentration des sinistres par score - modèle sans variables tarifaires")
-} else {
-  cat("Le fichier reports/no_tariff_risk_ranking_lift_table.csv n'a pas été produit.")
-}
-```
-
-#### Lecture détaillée des résultats
-
-Pour le modèle XGBoost sans variables tarifaires, les 1 % de dossiers les plus risqués contiennent 15 sinistres sur 111 observations, soit 8,06 % des sinistres du test set. Le taux de sinistre dans ce segment atteint 13,51 %, contre 1,68 % en moyenne, ce qui correspond à un lift de 8,03. Ce segment constitue donc un groupe de très forte vigilance, même sans utiliser la prime ou la commission.
-
-Le Top 5 % contient 54 sinistres sur 553 observations, soit 29,03 % des sinistres du test set. Son taux de sinistre est de 9,76 %, avec un lift de 5,80. Autrement dit, si un underwriter ne peut analyser qu'une faible fraction du portefeuille, le score permet déjà de concentrer près d'un tiers des sinistres observés dans 5 % des dossiers.
-
-Le Top 10 % contient 94 sinistres sur 1 106 observations, soit 50,54 % des sinistres. Le taux de sinistre y atteint 8,50 %, avec un lift de 5,05. Ce résultat est central pour l'usage métier : même sans variables tarifaires, le modèle parvient à concentrer plus de la moitié des sinistres dans les 10 % de dossiers les plus risqués.
-
-Le Top 20 % contient 132 sinistres, soit 70,97 % des sinistres du test set. Le taux de sinistre du segment est de 5,97 %, avec un lift de 3,55. Ce segment constitue un compromis opérationnel intéressant si l'assureur dispose d'une capacité d'analyse plus large.
-
-Enfin, le Top 30 % contient 147 sinistres, soit 79,03 % des sinistres observés. Le taux de sinistre reste de 4,43 %, avec un lift de 2,63. Le gain marginal diminue, mais le segment demeure nettement plus risqué que la moyenne du portefeuille.
-
-#### Interprétation métier
-
-Cette analyse montre que le modèle sans variables tarifaires est plus pertinent comme outil de scoring que comme règle de décision binaire stricte. Sa valeur métier réside dans sa capacité à ordonner les dossiers par niveau de risque. Pour un underwriter, cela permet de prioriser les dossiers à relire, d'organiser les contrôles, de cibler les analyses complémentaires et de justifier une vigilance renforcée sur certains profils.
-
-Le point important est que cette priorisation est obtenue sans utiliser la prime nette ni la commission. Le score repose donc davantage sur les caractéristiques intrinsèques du dossier : agence, canal, produit, destination, durée du voyage, âge et autres variables disponibles avant tarification. Cette propriété rend le modèle plus cohérent pour une application d'aide à la souscription.
-
-Le modèle ne doit toutefois pas être interprété comme une certitude individuelle de sinistre. Le score signale une concentration statistique du risque dans certains segments ; il ne remplace ni les règles internes de souscription, ni l'expertise humaine de l'underwriter. En définitive, l'analyse de lift du modèle sans variables tarifaires justifie son usage dans l'application Shiny : il permet de prioriser les dossiers tout en évitant une recommandation circulaire fondée sur une prime ou une commission déjà calculée.
+La distribution bootstrap est concentrée autour de la performance moyenne, ce qui renforce la conclusion principale : le modèle complet enrichi offre une discrimination robuste. La variabilité restante rappelle néanmoins que la classe sinistre contient peu d'observations, et que le modèle doit être suivi dans le temps si le mix produit, les destinations ou les canaux de distribution évoluent.
 
 # Agent IA explicatif et application Shiny
 
@@ -1048,7 +823,8 @@ if (!is.null(smote_intensity_class_balance)) {
 ```{r appendix-tab-b4}
 if (!is.null(model_ranking)) {
   model_ranking_display <- model_ranking %>%
-    transmute(Modele = model, Strategie = strategy, F1 = f_meas, Recall = recall, `ROC AUC` = roc_auc)
+    transmute(Modele = model, Strategie = strategy, F1 = f_meas, Recall = recall, `ROC AUC` = roc_auc) %>%
+    filter(if_any(everything(), ~ !is.na(.)))
   kable(model_ranking_display, digits = 4)
 }
 ```
@@ -1058,7 +834,8 @@ if (!is.null(model_ranking)) {
 ```{r appendix-tab-b5}
 if (!is.null(model_thresholds)) {
   model_thresholds_display <- model_thresholds %>%
-    transmute(Modele = model, Strategie = strategy, Seuil = threshold, Precision = precision, Recall = recall, F1 = f_meas)
+    transmute(Modele = model, Strategie = strategy, Seuil = threshold, Precision = precision, Recall = recall, F1 = f_meas) %>%
+    filter(if_any(everything(), ~ !is.na(.)))
   kable(model_thresholds_display, digits = 4)
 }
 ```
@@ -1093,3 +870,4 @@ if (!is.null(best_hyperparameters_by_model)) {
   cat("Le fichier reports/best_hyperparameters_by_model.csv n'a pas été produit.")
 }
 ```
+
