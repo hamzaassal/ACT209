@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: white; font-family: Arial, sans-serif; color: #111; }
+  .visual { width: 1900px; padding: 24px 36px; background: white; }
+  .memo-card { border: 2px solid #d9e2ef; border-left: 10px solid #2f5b89; background: #f8fbff; border-radius: 14px; padding: 22px 28px; margin: 0 0 26px; box-shadow: 0 3px 12px rgba(32,55,85,.06); font-size: 25px; line-height: 1.45; }
+  .memo-card h3 { margin: 0 0 22px; color: #173b5f; font-size: 21px; }
+  .contrib-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .contrib-item { border: 2px solid #dde6f2; background: white; border-radius: 14px; padding: 20px; font-size: 23px; line-height: 1.38; }
+  .contrib-item strong { display: block; color: #173b5f; margin-bottom: 8px; font-size: 25px; }
+  .method-schema { width: 1900px; padding: 26px 36px 18px; border: 2px solid #d6e1ef; border-radius: 18px; background: #fbfdff; box-shadow: 0 3px 14px rgba(32,55,85,.07); font-size: 24px; }
+  .schema-title { text-align: center; font-weight: 700; color: #173b5f; margin-bottom: 20px; font-size: 28px; }
+  .schema-row { display: flex; gap: 22px; justify-content: center; align-items: stretch; margin: 14px 0; }
+  .schema-box { border: 2px solid #cbd9ea; border-radius: 14px; background: white; padding: 22px; min-width: 360px; text-align: center; flex: 1 1 360px; }
+  .schema-box strong { display: block; color: #173b5f; margin-bottom: 10px; font-size: 29px; }
+  .schema-box small { color: #536579; font-size: 21px; }
+  .schema-box.train { border-color: #9ed2b0; background: #f4fbf6; }
+  .schema-box.cv { border-color: #9dbbe3; background: #f4f8fe; }
+  .schema-box.test { border-color: #f0aaa5; background: #fff7f6; }
+  .schema-box.business { border-color: #e3c16a; background: #fffaf0; }
+  .schema-arrow-down { text-align: center; color: #2f5b89; font-weight: 700; margin: 8px 0; font-size: 28px; }
+  .schema-caption { text-align: center; font-size: 18px; color: #536579; margin-top: 18px; }
+</style>
+</head>
+<body>
+<section id="resume" class="visual">
+  <div class="memo-card">
+    <h3>Résumé exécutif</h3>
+    Ce projet propose une démarche complète de scoring du risque de sinistre en assurance voyage. À partir du dataset Kaggle Travel Insurance, l’étude construit un pipeline de Machine Learning destiné à estimer la probabilité de survenance d’un sinistre, dans un contexte fortement déséquilibré où les sinistres sont rares. Plusieurs familles de modèles sont comparées, avec une attention particulière portée à XGBoost, à l’effet de SMOTE, à la validation bootstrap et à l’analyse du pouvoir de ranking par lift. Le travail distingue volontairement un modèle complet, utile comme benchmark statistique, et un modèle applicatif sans variables de tarif, plus cohérent pour une aide à la souscription en amont. Enfin, le projet prolonge la modélisation par une application Shiny et un agent IA explicatif, dont le rôle est de traduire le score en lecture métier pour le souscripteur, sans remplacer sa décision.
+  </div>
+  <div class="memo-card">
+    <h3>Problématique</h3>
+    Comment construire un score de risque de sinistre exploitable en assurance voyage, tout en rendant ses résultats compréhensibles, actionnables et compatibles avec une démarche d’aide à la souscription grâce à un agent IA explicatif ?
+  </div>
+  <div class="contrib-grid">
+    <div class="contrib-item"><strong>Contribution 1 — Modélisation du risque rare</strong>Comparaison de modèles de classification sur une cible sinistre fortement déséquilibrée.</div>
+    <div class="contrib-item"><strong>Contribution 2 — Analyse critique de SMOTE</strong>Évaluation de plusieurs intensités de rééquilibrage et discussion de leurs effets selon les variables utilisées.</div>
+    <div class="contrib-item"><strong>Contribution 3 — Choix actuariel du modèle applicatif</strong>Comparaison entre un modèle complet avec variables de tarif et un modèle sans variables de tarif pour l’aide à la souscription.</div>
+    <div class="contrib-item"><strong>Contribution 4 — Passage à l’usage métier</strong>Construction d’une application Shiny et d’un agent IA explicatif pour transformer le score en recommandation prudente et interprétable.</div>
+  </div>
+</section>
+
+<section id="demarche" class="method-schema">
+  <div class="schema-title">Démarche générale du projet</div>
+  <div class="schema-row"><div class="schema-box"><strong>Base Travel Insurance</strong><small>Données contrats, produits, destinations et statut de sinistre</small></div></div>
+  <div class="schema-arrow-down">↓</div>
+  <div class="schema-row">
+    <div class="schema-box train"><strong>Train stratifié</strong><small>Apprentissage, validation croisée et SMOTE uniquement sur l’entraînement</small></div>
+    <div class="schema-box test"><strong>Test set inchangé</strong><small>Distribution réelle conservée pour l’évaluation finale</small></div>
+  </div>
+  <div class="schema-arrow-down">↓</div>
+  <div class="schema-row">
+    <div class="schema-box cv"><strong>Benchmark modèles</strong><small>Logistique, arbre, random forest, XGBoost, CatBoost</small></div>
+    <div class="schema-box cv"><strong>Choix du champion</strong><small>ROC AUC, PR AUC, F1, recall et robustesse bootstrap</small></div>
+  </div>
+  <div class="schema-arrow-down">↓</div>
+  <div class="schema-row">
+    <div class="schema-box business"><strong>Passage au scoring</strong><small>Classement des dossiers par probabilité estimée de sinistre</small></div>
+    <div class="schema-box business"><strong>Analyse lift</strong><small>Mesure de la concentration des sinistres dans les meilleurs scores</small></div>
+    <div class="schema-box business"><strong>Agent IA + Shiny</strong><small>Explication métier et aide à la souscription</small></div>
+  </div>
+  <div class="schema-caption">Figure 1 — Synthèse de la démarche : du modèle de classification au score de risque exploitable par un souscripteur.</div>
+</section>
+</body>
+</html>
